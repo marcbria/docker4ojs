@@ -12,7 +12,12 @@ Docker images and stacks for OJS (and PKP tools)
 
 1) [Install docker compose](https://docs.docker.com/compose/install)
 
-2) Download docker-compose.yml file with:
+``` 
+$ sudo pip install docker-compose
+``` 
+
+
+2) Download [docker-compose.yml](https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml) file with:
 
 ``` 
 $ wget https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml
