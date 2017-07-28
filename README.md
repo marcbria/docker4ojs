@@ -28,6 +28,8 @@ $ wget https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docke
 ``` 
 $ docker-compose up
 ```
+4) Visit your site at: http://localhost:8080
+
 
 # Tags
 
