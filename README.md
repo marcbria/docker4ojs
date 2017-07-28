@@ -9,6 +9,7 @@ Docker images and stacks for OJS (and PKP tools)
 [ PHP:5.6-apache ]  --- LINK ----> [ MYSQL ]
 ``` 
 
+
 # Execute
 
 1) [Install docker compose](https://docs.docker.com/compose/install)
@@ -17,17 +18,20 @@ Docker images and stacks for OJS (and PKP tools)
 $ sudo pip install docker-compose
 ```
 
-2) Download [docker-compose.yml](https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml) file with:
+
+2) Download [docker-compose.yml](https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml) file:
 
 ```
 $ wget https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml
 ```
+
 
 3) Run:
 
 ``` 
 $ docker-compose up
 ```
+
 
 4) Visit your OJS at: http://localhost:8080
 
