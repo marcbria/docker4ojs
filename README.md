@@ -19,10 +19,10 @@ $ sudo pip install docker-compose
 ```
 
 
-2) Download [docker-compose.yml](https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml) file:
+2) Download [docker-compose.yml](https://raw.githubusercontent.com/marcbria/docker4ojs/master/docker-compose.yml) file:
 
 ```
-$ wget https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml
+$ wget https://raw.githubusercontent.com/marcbria/docker4ojs/master/docker-compose.yml
 ```
 
 
