@@ -34,4 +34,4 @@ $ docker-compose up
 # Tags
 
 * **latest:** Last OJS version from pkp's github (master branch).
-* **branch:** Build an specific branch.
+* **version:** Build an specific branch. You need to specify -e param with the pkp's specific branch name.
