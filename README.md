@@ -4,9 +4,8 @@ Docker images and stacks for OJS (and PKP tools)
 # Architecture
 
 ``` 
-[  OJS   ]
-[  PHP   ]  --- LINK ----> [ MYSQL ]
-[ APACHE ]
+[   OJS:latest   ]
+[ PHP:5.6-apache ]  --- LINK ----> [ MYSQL ]
 ``` 
 
 # Run
