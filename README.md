@@ -18,22 +18,22 @@ Docker images and stacks for OJS (and PKP tools)
 $ sudo pip install docker-compose
 ```
 
-
-2) Download [docker-compose.yml](https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml) file:
+2) Download [docker-compose.yml](https://raw.githubusercontent.com/marcbria/docker4ojs/version/docker-compose.yml) file:
 
 ```
-$ wget https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml
+$ wget https://raw.githubusercontent.com/marcbria/docker4ojs/version/docker-compose.yml
 ```
-
 
 3) Run:
 
-``` 
+```
+$ env OJS_BRANCH=ojs-stable-3_0_2
 $ docker-compose up
 ```
 
 
 4) Visit your OJS at: http://localhost:8080
+
 
 # Tags
 
