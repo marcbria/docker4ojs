@@ -1,0 +1,22 @@
+# File: docker-compose.yml
+# Access via "http://localhost:8080"
+#   (or "http://$(docker-machine ip):8080" if using docker-machine)
+#
+# Database type: MySQL
+# Database name: ojs
+# Database username: ojs
+# Database password: ojs
+
+ojs:
+  image: marcbria/docker4ojs:latest
+  ports:
+    - 8080:80
+  links:
+    - mysql:db
+mysql:
+  image: mysql
+  environment:
+    - MYSQL_ROOT_PASSWORD=root
+    - MYSQL_DATABASE=ojs
+    - MYSQL_USER=ojs
+    - MYSQL_PASSWORD=ojs
