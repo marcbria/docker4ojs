@@ -19,4 +19,4 @@ mysql:
     - MYSQL_ROOT_PASSWORD=root
     - MYSQL_DATABASE=ojs
     - MYSQL_USER=ojs
-    - MYSQL_PASSWORD=ojs
+    - MYSQL_PASSWORD=ojs
