@@ -8,36 +8,17 @@ Docker images and stacks for OJS (and PKP tools)
 [ PHP:5.6-apache ]  --- LINK ----> [ MYSQL ]
 ``` 
 
-# Run
+# Execute
 
-Create a docker-compose.yml file with:
+1) [Install docker compose](https://docs.docker.com/compose/install)
+
+2) Download docker-compose.yml file with:
 
 ``` 
-# File: docker-compose.yml
-# Access via "http://localhost:8080"
-#   (or "http://$(docker-machine ip):8080" if using docker-machine)
-#
-# Database type: MySQL
-# Database name: ojs
-# Database username: ojs
-# Database password: ojs
-
-ojs:
-  image: docker4ojs/pkp-ojs:latest
-  ports:
-    - 8080:80
-  links:
-    - mysql:db
-mysql:
-  image: mysql
-  environment:
-    - MYSQL_ROOT_PASSWORD=root
-    - MYSQL_DATABASE=ojs
-    - MYSQL_USER=ojs
-    - MYSQL_PASSWORD=ojs
+$ wget https://raw.githubusercontent.com/marcbria/docker4ojs/master/latest/docker-compose.yml
 ```
 
-Then run docker-compose:
+3) Run:
 
 ``` 
 $ docker-compose up
@@ -45,4 +26,4 @@ $ docker-compose up
 
 # Tags
 
-* latest: Last OJS version from pkp's github.
+* **latest:** Last OJS version from pkp's github (master branch).
