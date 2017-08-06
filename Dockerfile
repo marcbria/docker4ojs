@@ -1,7 +1,7 @@
 FROM php:5.6-apache
-MAINTAINER Marc Bria Ramírez <marc.bria@uab.cat>
+LABEL maintainer="Marc Bria Ramírez <marc.bria@uab.cat>"
 
-ENV OJS_BRANCH="ojs-stable_3_0_2"
+ENV OJS_BRANCH ojs-stable_3_0_2
 
 # PHP Dependencies
 RUN apt-get update \
@@ -15,6 +15,8 @@ RUN apt-get install git -y \
 
 # RUN git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html
 RUN git clone -v --recursive --progress -b ojs-stable_3_0_2 https://github.com/pkp/ojs.git /var/www/html
+
+RUN echo OJS_BRANCH is: ${OJS_BRANCH}
 
 RUN cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
