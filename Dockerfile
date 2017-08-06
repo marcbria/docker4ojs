@@ -14,7 +14,10 @@ RUN apt-get install git -y \
     && rm -fr /var/www/html/* 
 
 # RUN git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html
-RUN git clone -v --recursive --progress -b ojs-stable_3_0_2 https://github.com/pkp/ojs.git /var/www/html
+# RUN git clone -v --recursive --progress -b ojs-stable_3_0_2 https://github.com/pkp/ojs.git /var/www/html
+
+RUN git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html
+RUN git checkout -b ojs-stable-3_0_2 origin/ojs-stable-3_0_2
 
 RUN echo OJS_BRANCH is: ${OJS_BRANCH}
 
