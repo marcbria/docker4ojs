@@ -11,9 +11,12 @@ RUN apt-get update \
 # Cloning and Cleaning OJS and PKP-LIB git repositories
 RUN apt-get install git -y \
     && git config --global url.https://.insteadOf git:// \
-    && rm -fr /var/www/html/* \
-    && git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html \
-    && cd /var/www/html/lib/pkp \
+    && rm -fr /var/www/html/* 
+
+# RUN git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html
+RUN git clone -v --recursive --progress -b ojs-stable_3_0_2 https://github.com/pkp/ojs.git /var/www/html
+
+RUN cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
     && php composer.phar update \
     && cd /var/www/html \
