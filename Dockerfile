@@ -1,6 +1,8 @@
 FROM php:5.6-apache
 MAINTAINER Marc Bria Ramírez <marc.bria@uab.cat>
 
+ENV OJS_BRANCH="ojs-stable_3_0_2"
+
 # PHP Dependencies
 RUN apt-get update \
     && apt-get install zlib1g-dev libxml2-dev -y \
@@ -10,7 +12,7 @@ RUN apt-get update \
 RUN apt-get install git -y \
     && git config --global url.https://.insteadOf git:// \
     && rm -fr /var/www/html/* \
-    && git clone -v --recursive --progress -b ${OJS_BRANCH:-ojs-stable_3_0_2} https://github.com/pkp/ojs.git /var/www/html \
+    && git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html \
     && cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
     && php composer.phar update \
