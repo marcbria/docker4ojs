@@ -14,7 +14,7 @@
 ojs:
   image: marcbria/docker4ojs:version
   environment:
-    - OJS_BRANCH=$OJS_BRANCH
+    - OJS_BRANCH=${OJS_BRANCH}
   ports:
     - 8080:80
   links:
