@@ -16,6 +16,7 @@ RUN apt-get -qqy update \
                             libxslt-dev \
 			    cron \
 			    logrotate \
+			    git \
     && apt-get install zlib1g-dev libxml2-dev -y \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
@@ -48,7 +49,6 @@ WORKDIR /var/www/html
 ENV OJS_VERSION ojs-stable-3_0_2
 
 # Cloning and Cleaning OJS and PKP-LIB git repositories
-RUN apt-get install git -y 
 RUN git config --global url.https://.insteadOf git:// 
 RUN rm -fr /var/www/html/*
 
