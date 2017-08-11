@@ -48,9 +48,9 @@ WORKDIR /var/www/html
 ENV OJS_VERSION ojs-stable-3_0_2
 
 # Cloning and Cleaning OJS and PKP-LIB git repositories
-RUN apt-get install git -y \
-    && git config --global url.https://.insteadOf git:// \
-    && rm -fr /var/www/html/*
+RUN apt-get install git -y 
+RUN git config --global url.https://.insteadOf git:// 
+RUN rm -fr /var/www/html/*
 
 # RUN git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html
 # RUN git clone -v --recursive --progress -b ojs-stable_3_0_2 https://github.com/pkp/ojs.git /var/www/html
