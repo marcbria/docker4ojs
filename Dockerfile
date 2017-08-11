@@ -1,11 +1,8 @@
 FROM php:5.6-apache
 LABEL maintainer="Marc Bria Ramírez <marc.bria@uab.cat>"
 
-FROM php:5.6-apache
-
-MAINTAINER Rondineli Saad <rondineli.saad@scielo.org>
-
-RUN a2enmod rewrite expires
+# Branch to be pulled. It can be overridden/set in the call or the compose file
+ENV OJS_VERSION ojs-stable-3_0_2
 
 # install the PHP extensions we need
 RUN apt-get -qqy update \
@@ -17,7 +14,7 @@ RUN apt-get -qqy update \
 			    cron \
 			    logrotate \
 			    git \
-    && apt-get install zlib1g-dev libxml2-dev -y \
+    			    zlib1g-dev libxml2-dev \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
     && docker-php-ext-install gd \
@@ -28,6 +25,9 @@ RUN apt-get -qqy update \
 			      soap \
 			      xsl \
 			      zip
+
+# Dev stuff
+RUN apt-get install nano net-tools
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -41,12 +41,10 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # enable mod_rewrite
+RUN a2enmod rewrite expires
 RUN a2enmod rewrite
 
-WORKDIR /var/www/html
-
-# Branch to be pulled. It can be overridden/set in the call or the compose file
-ENV OJS_VERSION ojs-stable-3_0_2
+# WORKDIR /var/www/html
 
 # Cloning and Cleaning OJS and PKP-LIB git repositories
 RUN git config --global url.https://.insteadOf git:// 
@@ -107,6 +105,3 @@ CMD ["/bin/bash", "/ojs-startup.sh"]
 #     && chmod ug+rw config.inc.php \
 #     && mkdir -p /var/www/files/ \
 #     && chown -R www-data:www-data /var/www/ 
-
-# Dev stuff
-RUN apt-get install nano net-tools
