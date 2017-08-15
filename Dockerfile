@@ -13,12 +13,15 @@ RUN apt-get install git -y \
     && git config --global url.https://.insteadOf git:// \
     && rm -fr /var/www/html/* 
 
+# Dev stuff
+RUN apt-get install nano net-tools
+
 # RUN git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html
 # RUN git clone -v --recursive --progress -b ojs-stable_3_0_2 https://github.com/pkp/ojs.git /var/www/html
 
-RUN echo OJS_BRANCH is: ${OJS_BRANCH}
-RUN git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html
-RUN git checkout -b ${OJS_BRANCH} origin/${OJS_BRANCH}
+RUN echo OJS_BRANCH is: ${OJS_BRANCH} \
+    && git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html \
+    && git checkout -b ${OJS_BRANCH} origin/${OJS_BRANCH}
 
 RUN cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
@@ -35,6 +38,3 @@ RUN cp config.TEMPLATE.inc.php config.inc.php \
     && chmod ug+rw config.inc.php \
     && mkdir -p /var/www/files/ \
     && chown -R www-data:www-data /var/www/ 
-
-# Dev stuff
-RUN apt-get install nano net-tools
