@@ -27,7 +27,7 @@ RUN apt-get -qqy update \
 			      zip
 
 # Dev stuff
-RUN apt-get install nano net-tools
+RUN apt-get install -y nano net-tools
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
