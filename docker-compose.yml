@@ -8,13 +8,12 @@
 # Database password: ojs
 #
 # Call example:
-# $ env OJS_BRANCH=ojs-stable-3_0_2
 # $ docker-compose up
 
 ojs:
   image: marcbria/docker4ojs:version
   environment:
-    - OJS_BRANCH=${OJS_BRANCH}
+    - OJS_BRANCH=ojs-stable-3_0_2
   ports:
     - 8080:80
   links:

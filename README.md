@@ -27,10 +27,8 @@ $ wget https://raw.githubusercontent.com/marcbria/docker4ojs/version/docker-comp
 3) Run:
 
 ```
-$ env OJS_BRANCH=ojs-stable-3_0_2
 $ docker-compose up
 ```
-
 
 4) Visit your OJS at: http://localhost:8080
 
@@ -38,4 +36,4 @@ $ docker-compose up
 # Tags
 
 * **latest:** Last OJS version from pkp's github (master branch).
-* **version:** Build an specific branch. You need to specify -e param with the pkp's specific branch name.
+* **version:** Build an specific branch. You need to specify -e param in the docker-compose file with the pkp's specific branch name.
