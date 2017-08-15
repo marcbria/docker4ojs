@@ -15,6 +15,7 @@ RUN apt-get -qqy update \
 			    logrotate \
 			    git \
     			    zlib1g-dev libxml2-dev \
+    && apt-get install -qqy nano net-tools \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
     && docker-php-ext-install gd \
@@ -25,9 +26,6 @@ RUN apt-get -qqy update \
 			      soap \
 			      xsl \
 			      zip
-
-# Dev stuff
-RUN apt-get install -y nano net-tools
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
