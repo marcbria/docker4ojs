@@ -15,7 +15,6 @@ RUN apt-get -qqy update \
 			    logrotate \
 			    git \
     			    zlib1g-dev libxml2-dev \
-    && apt-get install -qqy nano net-tools \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
     && docker-php-ext-install gd \
@@ -26,6 +25,10 @@ RUN apt-get -qqy update \
 			      soap \
 			      xsl \
 			      zip
+
+# DEV tools
+RUN apt-get install -qqy nano net-tools 
+
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -39,21 +42,21 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # enable mod_rewrite
-RUN a2enmod rewrite expires
-RUN a2enmod rewrite
+RUN a2enmod rewrite expires \
+    && a2enmod rewrite
 
 # WORKDIR /var/www/html
 
 # Cloning and Cleaning OJS and PKP-LIB git repositories
-RUN git config --global url.https://.insteadOf git:// 
-RUN rm -fr /var/www/html/*
+RUN git config --global url.https://.insteadOf git:// \
+    && rm -fr /var/www/html/*
 
 # RUN git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html
 # RUN git clone -v --recursive --progress -b ojs-stable_3_0_2 https://github.com/pkp/ojs.git /var/www/html
 
 RUN echo OJS_BRANCH is: ${OJS_BRANCH}
-RUN git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html
-RUN git checkout -b ojs-stable-3_0_2 origin/ojs-stable-3_0_2
+RUN git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html \
+    && git checkout -b ojs-stable-3_0_2 origin/ojs-stable-3_0_2
 #	&& chown -R www-data:www-data /var/www/ojs
 
 RUN cd /var/www/html/lib/pkp \
@@ -76,7 +79,8 @@ ENV OJS_DB_PASSWORD ojs
 ENV OJS_DB_NAME ojs
 
 # Site servername
-ENV SERVERNAME ${OJS_VERSION}.localhost
+# ENV SERVERNAME ${OJS_VERSION}.localhost
+ENV SERVERNAME localhost
 ENV APACHE_LOG_DIR /var/log/apache2
 ENV LOG_NAME ${OJS_VERSION}.log
 
