@@ -59,7 +59,7 @@ RUN git checkout -b ojs-stable-3_0_2 origin/ojs-stable-3_0_2
 RUN cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
     && php composer.phar update \
-    && cd /var/www/html \
+    && cd /var/www/html 
 #    && find . | grep .git | xargs rm -rf \
 #    && apt-get remove git -y \
 #    && apt-get autoremove -y \
