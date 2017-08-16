@@ -1,7 +1,7 @@
 FROM php:5.6-apache
 LABEL maintainer="Marc Bria Ramírez <marc.bria@uab.cat>"
 
-ENV OJS_BRANCH ojs-stable_3_0_2
+ENV OJS_BRANCH ojs-stable-3_0_2
 
 # PHP Dependencies
 RUN apt-get update \
@@ -21,8 +21,12 @@ RUN apt-get install nano net-tools
 
 RUN echo OJS_BRANCH is: ${OJS_BRANCH} 
 # RUN git clone -b ojs-stable-3_0_2 --single-branch https://github.com/pkp/ojs.git /var/www/html
-RUN git clone -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
 # RUN git checkout -b ${OJS_BRANCH}
+
+# RUN git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html
+# RUN git checkout ojs-stable-3_0_2
+
+RUN git clone -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
 
 RUN cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
@@ -38,4 +42,8 @@ RUN cd /var/www/html/lib/pkp \
 RUN cp config.TEMPLATE.inc.php config.inc.php \
     && chmod ug+rw config.inc.php \
     && mkdir -p /var/www/files/ \
-    && chown -R www-data:www-data /var/www/ 
+    && chown -R www-data:www-data /var/www/
+
+# Setting Apache
+RUN a2enmod rewrite
+RUN service apache2 restart 
