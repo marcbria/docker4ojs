@@ -21,7 +21,8 @@ RUN apt-get install nano net-tools
 
 RUN echo OJS_BRANCH is: ${OJS_BRANCH} 
 RUN git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html
-RUN git checkout -b ${OJS_BRANCH} origin/${OJS_BRANCH}
+RUN git branch ${OJS_BRANCH} origin/${OJS_BRANCH}
+RUN git checkout -b ${OJS_BRANCH}
 
 RUN cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
