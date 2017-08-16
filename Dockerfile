@@ -26,7 +26,7 @@ RUN echo OJS_BRANCH is: ${OJS_BRANCH}
 # RUN git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html
 # RUN git checkout ojs-stable-3_0_2
 
-RUN git clone -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
+RUN git clone -v --recursive --progress -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
 
 RUN cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
