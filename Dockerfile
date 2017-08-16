@@ -45,5 +45,6 @@ RUN cp config.TEMPLATE.inc.php config.inc.php \
     && chown -R www-data:www-data /var/www/
 
 # Setting Apache
+COPY default.htaccess /var/www/html/.htaccess
 RUN a2enmod rewrite
 RUN service apache2 restart 
