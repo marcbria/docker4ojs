@@ -4,8 +4,11 @@ Docker images and stacks for OJS (and PKP tools)
 
 # Architecture
 
+The application is divided in two containers:
+
+
 ```
-[   OJS:latest   ]
+[ OJS:latest     ]
 [ PHP:5.6-apache ]  --- LINK ----> [ MYSQL ]
 ``` 
 
@@ -28,14 +31,26 @@ $ wget https://raw.githubusercontent.com/marcbria/docker4ojs/master/docker-compo
 
 3) Run:
 
-``` 
+```
 $ docker-compose up
 ```
 
 
-4) Visit your OJS at: http://localhost:8080
+4) Visit your new OJS at: http://localhost:8080
+
+
+5) Fill the forms as you wish but remember that the DB fields need to fit with mysql docker as defined in docker-compose.yml:
+
+* Database driver: MySQLi
+* Host: db
+* Username: ojs
+* Password: ojs
+* Database name: ojs
+* Unckeck "Create new database"
+
+
 
 # Tags
 
-* **latest:** Last OJS version from pkp's github (master branch).
-* **version:** Build an specific branch. You need to specify -e param with the pkp's specific branch name.
+* **latest:** Last DEV OJS version from pkp's github (master branch).
+* **version:** Build an specific branch. By default the last stable (ojs-stable-3_0_2) You need to modify the the docker-compose file with the pkp's specific branch name or use the -e param.

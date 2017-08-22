@@ -1,5 +1,7 @@
 FROM php:5.6-apache
-MAINTAINER Marc Bria Ramírez <marc.bria@uab.cat>
+LABEL maintainer="Marc Bria Ramírez <marc.bria@uab.cat>"
+
+ENV OJS_BRANCH master
 
 # PHP Dependencies
 RUN apt-get update \
@@ -9,9 +11,15 @@ RUN apt-get update \
 # Cloning and Cleaning OJS and PKP-LIB git repositories
 RUN apt-get install git -y \
     && git config --global url.https://.insteadOf git:// \
-    && rm -fr /var/www/html/* \
-    && git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html \
-    && cd /var/www/html/lib/pkp \
+    && rm -fr /var/www/html/* 
+
+# Dev stuff
+RUN apt-get install nano net-tools
+
+RUN echo OJS_BRANCH is: ${OJS_BRANCH} 
+RUN git clone -v --recursive --progress -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
+
+RUN cd /var/www/html/lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
     && php composer.phar update \
     && cd /var/www/html \
@@ -20,8 +28,14 @@ RUN apt-get install git -y \
     && apt-get autoremove -y \
     && apt-get clean -y
 
+
 # Configuring OJS
 RUN cp config.TEMPLATE.inc.php config.inc.php \
     && chmod ug+rw config.inc.php \
     && mkdir -p /var/www/files/ \
-    && chown -R www-data:www-data /var/www/ \
+    && chown -R www-data:www-data /var/www/
+
+# Setting Apache
+COPY default.htaccess /var/www/html/.htaccess
+RUN a2enmod rewrite
+RUN service apache2 restart 
