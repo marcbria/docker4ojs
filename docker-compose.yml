@@ -2,10 +2,12 @@
 # Access via "http://localhost:8080"
 #   (or "http://$(docker-machine ip):8080" if using docker-machine)
 #
-# Database type: MySQL
-# Database name: ojs
-# Database username: ojs
-# Database password: ojs
+# OJS setup:
+# - Database type: MySQLi
+# - Host: db
+# - Database name: ojs
+# - Database username: ojs
+# - Database password: ojs
 #
 # Call example:
 # $ docker-compose up
