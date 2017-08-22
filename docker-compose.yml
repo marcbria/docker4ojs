@@ -13,7 +13,7 @@
 # $ docker-compose up
 
 ojs:
-  image: marcbria/docker4ojs:master
+  image: marcbria/docker4ojs:latest
   environment:
     - OJS_BRANCH=master
   ports:
