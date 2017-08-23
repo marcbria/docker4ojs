@@ -14,15 +14,10 @@
 #
 # ToDo: add extra_hosts
 
+version: "3"
+
 services:
-  ojs:
-    image: marcbria/docker4ojs:version
-    environment:
-      - OJS_BRANCH=ojs-stable-3_0_2
-    expose:
-      - "80"
-    links:
-      - mysql:db
+
   mysql:
     image: mysql
     environment:
@@ -30,3 +25,14 @@ services:
       - MYSQL_DATABASE=ojs
       - MYSQL_USER=ojs
       - MYSQL_PASSWORD=ojs
+
+  ojs:
+    image: marcbria/docker4ojs:version
+    environment:
+      - OJS_BRANCH=ojs-stable-3_0_2
+    ports:
+      - "80"
+    links:
+      - mysql:db
+    extra_hosts:
+      - "myOJS.com:127.0.0.1"
