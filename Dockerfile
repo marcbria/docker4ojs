@@ -16,16 +16,7 @@ RUN apt-get install git -y \
 # Dev stuff
 RUN apt-get install nano net-tools
 
-# RUN git clone -v --recursive --progress -b ${OJS_BRANCH} https://github.com/pkp/ojs.git /var/www/html
-# RUN git clone -v --recursive --progress -b ojs-stable_3_0_2 https://github.com/pkp/ojs.git /var/www/html
-
 RUN echo OJS_BRANCH is: ${OJS_BRANCH} 
-# RUN git clone -b ojs-stable-3_0_2 --single-branch https://github.com/pkp/ojs.git /var/www/html
-# RUN git checkout -b ${OJS_BRANCH}
-
-# RUN git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html
-# RUN git checkout ojs-stable-3_0_2
-
 RUN git clone -v --recursive --progress -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
 
 RUN cd /var/www/html/lib/pkp \

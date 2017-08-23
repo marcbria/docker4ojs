@@ -11,16 +11,16 @@
 #
 # Call example:
 # $ docker-compose up
-
-version: "3"
+#
+# ToDo: add extra_hosts
 
 services:
   ojs:
     image: marcbria/docker4ojs:version
     environment:
       - OJS_BRANCH=ojs-stable-3_0_2
-    ports:
-      - 8080:80
+    expose:
+      - "80"
     links:
       - mysql:db
   mysql:
