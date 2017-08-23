@@ -12,18 +12,21 @@
 # Call example:
 # $ docker-compose up
 
-ojs:
-  image: marcbria/docker4ojs:version
-  environment:
-    - OJS_BRANCH=ojs-stable-3_0_2
-  ports:
-    - 8080:80
-  links:
-    - mysql:db
-mysql:
-  image: mysql
-  environment:
-    - MYSQL_ROOT_PASSWORD=root
-    - MYSQL_DATABASE=ojs
-    - MYSQL_USER=ojs
-    - MYSQL_PASSWORD=ojs
+version: "3"
+
+services:
+  ojs:
+    image: marcbria/docker4ojs:version
+    environment:
+      - OJS_BRANCH=ojs-stable-3_0_2
+    ports:
+      - 8080:80
+    links:
+      - mysql:db
+  mysql:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=ojs
+      - MYSQL_USER=ojs
+      - MYSQL_PASSWORD=ojs
