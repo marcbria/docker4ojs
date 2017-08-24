@@ -31,8 +31,10 @@ services:
 
   ojs:
     image: marcbria/docker4ojs:version
-    environment:
-      - OJS_BRANCH
+    build:
+      context: .
+      args:
+        - OJS_BRANCH
     ports:
       - "80"
     links:

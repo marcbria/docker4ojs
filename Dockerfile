@@ -1,8 +1,6 @@
 FROM php:5.6-apache
 LABEL maintainer="Marc Bria Ramírez <marc.bria@uab.cat>"
 
-ENV OJS_BRANCH ojs-stable-3_0_2
-
 # PHP Dependencies
 RUN apt-get update \
     && apt-get install zlib1g-dev libxml2-dev -y \
@@ -15,6 +13,8 @@ RUN apt-get install git -y \
 
 # Dev stuff
 RUN apt-get install nano net-tools
+
+ARG OJS_BRANCH=ojs-stable-3_0_2
 
 RUN echo OJS_BRANCH is: ${OJS_BRANCH} 
 RUN git clone -v --recursive --progress -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
