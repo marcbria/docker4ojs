@@ -18,21 +18,24 @@ version: "3"
 
 services:
 
-  mysql:
-    image: mysql
+  mariadb:
+    image: mariadb:${MYSQL_VERSION}
     environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=ojs
-      - MYSQL_USER=ojs
-      - MYSQL_PASSWORD=ojs
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_DATABASE
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+#    volumes:
+#      - ./mariadb-init:/docker-entrypoint-initdb.d # Place init .sql file(s) here.
+#      - /path/to/mariadb/data/on/host:/var/lib/mysql # I want to manage volumes manually.
 
   ojs:
     image: marcbria/docker4ojs:version
     environment:
-      - OJS_BRANCH=ojs-stable-3_0_2
+      - OJS_BRANCH
     ports:
       - "80"
     links:
-      - mysql:db
+      - mariadb:db
     extra_hosts:
-      - "myOJS.com:127.0.0.1"
+      - "${OJS_TAG}.${OJS_DOMAIN}:127.0.0.1"
