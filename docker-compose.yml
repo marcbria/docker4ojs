@@ -31,10 +31,6 @@ services:
 
   ojs:
     image: marcbria/docker4ojs:experimental
-    build:
-      context: .
-      args:
-        - OJS_BRANCH=ojs-stable-2_4_7
     ports:
       - "80"
     links:
