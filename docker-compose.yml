@@ -34,7 +34,7 @@ services:
     build:
       context: .
       args:
-        - OJS_BRANCH
+        - OJS_BRANCH=ojs-stable-2_4_7
     ports:
       - "80"
     links:
