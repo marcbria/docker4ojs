@@ -14,15 +14,15 @@ RUN apt-get install git -y \
 # Dev stuff
 RUN apt-get install nano net-tools
 
-ARG OJS_BRANCH
-
-RUN echo OJS_BRANCH is: ${OJS_BRANCH} 
+ENV OJS_BRANCH=ojs-stable-3_0_2
 RUN git clone -v --recursive --progress -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
 
-RUN cd /var/www/html/lib/pkp \
+WORKDIR /var/www/html
+RUN cd lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
-    && php composer.phar update \
-    && cd /var/www/html \
+    && php composer.phar update 
+
+RUN cd /var/www/html \
     && find . | grep .git | xargs rm -rf \
     && apt-get remove git -y \
     && apt-get autoremove -y \
