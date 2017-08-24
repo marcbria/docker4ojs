@@ -14,7 +14,7 @@ RUN apt-get install git -y \
 # Dev stuff
 RUN apt-get install nano net-tools
 
-ARG OJS_BRANCH=ojs-stable-3_0_2
+ARG OJS_BRANCH
 
 RUN echo OJS_BRANCH is: ${OJS_BRANCH} 
 RUN git clone -v --recursive --progress -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html

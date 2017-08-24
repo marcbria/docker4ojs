@@ -30,7 +30,7 @@ services:
 #      - /path/to/mariadb/data/on/host:/var/lib/mysql # I want to manage volumes manually.
 
   ojs:
-    image: marcbria/docker4ojs:version
+    image: marcbria/docker4ojs:experimental
     build:
       context: .
       args:
