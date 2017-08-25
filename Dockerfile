@@ -15,8 +15,8 @@ RUN apt-get install git -y \
 RUN apt-get install nano net-tools
 
 # Get OJS code from GitHub
-ENV OJS_BRANCH=ojs-stable-3_0_2
-RUN git clone -v --recursive --progress -b ${OJS_BRANCH} --single-branch https://github.com/pkp/ojs.git /var/www/html
+# ENV OJS_BRANCH=ojs-stable-3_0_2
+RUN git clone -v --recursive --progress -b ${OJS_BRANCH:-ojs-stable-3_0_1} --single-branch https://github.com/pkp/ojs.git /var/www/html
 
 WORKDIR /var/www/html
 RUN cd lib/pkp \
