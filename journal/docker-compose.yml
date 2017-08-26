@@ -1,0 +1,36 @@
+# File: docker-compose.yml
+# Access via "http://localhost:8080"
+#   (or "http://$(docker-machine ip):8080" if using docker-machine)
+#
+# Call example:
+# $ docker-compose up
+
+version: "3"
+
+services:
+
+  mariadb:
+    image: mariadb:${MYSQL_VERSION}
+    environment:
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_DATABASE
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+    volumes:
+#      - ./mariadb-init:/docker-entrypoint-initdb.d # Place init .sql file(s) here.
+       - /srv/mysql/journal:/var/lib/mysql # I want data to be stored outside docker.
+
+  ojs:
+    image: marcbria/docker4ojs:experimental
+    hostname: ${OJS_TAG}
+    build:
+      context: .
+      dockerfile: ../Dockerfile
+    environment:
+      - OJS_BRANCH
+    ports:
+      - "8081:80"
+    links:
+      - mariadb:db
+    extra_hosts:
+      - "${OJS_TAG}.${OJS_DOMAIN}:127.0.0.1"
