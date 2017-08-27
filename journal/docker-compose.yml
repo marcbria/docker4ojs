@@ -9,8 +9,16 @@ version: "3"
 
 services:
 
+#  base:
+#    env_file:
+#      - my_env.txt
+
   mariadb:
+#    extends:
+#      service: base
     image: mariadb:${MYSQL_VERSION}
+#    container_name: {$OJS_TAG}_mysql
+    container_name: main_mysql  # Enable this line if you want a single mysql container.
     environment:
       - MYSQL_ROOT_PASSWORD
       - MYSQL_DATABASE
@@ -21,6 +29,8 @@ services:
        - /srv/mysql/journal:/var/lib/mysql # I want data to be stored outside docker.
 
   ojs:
+    env_file:
+    - .env
     image: marcbria/docker4ojs:experimental
     hostname: ${OJS_TAG}
     build:
@@ -34,3 +44,6 @@ services:
       - mariadb:db
     extra_hosts:
       - "${OJS_TAG}.${OJS_DOMAIN}:127.0.0.1"
+    depends_on:
+      - mariadb
+    restart: always
