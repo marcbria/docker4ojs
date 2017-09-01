@@ -1,6 +1,7 @@
 # docker4ojs
 
 Docker images and stacks for OJS (and PKP tools)
+(This readme is underconstruction and is not full functional)
 
 # Architecture
 
@@ -18,16 +19,17 @@ Docker images and stacks for OJS (and PKP tools)
 $ sudo pip install docker-compose
 ```
 
-2) Download [docker-compose.yml](https://raw.githubusercontent.com/marcbria/docker4ojs/version/docker-compose.yml) file:
+2) Clone localy the [singldb branch](https://raw.githubusercontent.com/marcbria/docker4ojs/singledb):
 
 ```
-$ wget https://raw.githubusercontent.com/marcbria/docker4ojs/version/docker-compose.yml
+$ mkdir docker4ojs
+$ git clone -b singledb --single-branch https://github.com/marcbria/docker4ojs.git opencv-2.4
 ```
 
 3) Run:
 
 ```
-$ docker-compose up
+$ ./runJournal.sh journal
 ```
 
 4) Visit your new OJS at: http://localhost:8080
@@ -35,7 +37,7 @@ $ docker-compose up
 5) Fill the forms as you wish but the DB data need to fit with mysql docker as defined in docker-compose.yml:
 
 * Database driver: MySQLi
-* Host: db
+* Host: dbnet
 * Username: ojs
 * Password: ojs
 * Database name: ojs

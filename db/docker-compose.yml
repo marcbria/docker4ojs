@@ -1,0 +1,31 @@
+# File: docker-compose.yml
+# Access via "http://localhost:8080"
+#   (or "http://$(docker-machine ip):8080" if using docker-machine)
+#
+# Call example:
+# $ docker-compose up
+
+version: "3"
+
+services:
+
+  db:
+    image: mariadb:${MYSQL_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}
+    hostname: ${COMPOSE_PROJECT_NAME}
+    networks:
+      - dbnet
+    env_file:
+      - .env
+    ports:
+      - 3306:3306
+    volumes:
+#      - ./mariadb-init:/docker-entrypoint-initdb.d # Place init .sql file(s) here.
+      - /srv/mysql/${COMPOSE_PROJECT_NAME}:/var/lib/mysql # I want data to be stored outside docker.
+    extra_hosts:
+      - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}:127.0.0.1"
+    restart: always
+
+networks:
+  dbnet:
+    driver: bridge

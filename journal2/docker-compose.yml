@@ -16,6 +16,9 @@ services:
 #    depends_on:
 #      - db
     hostname: ${COMPOSE_PROJECT_NAME}
+    build:
+      context: .
+      dockerfile: ../Dockerfile
 
     # Single DB for every journal:
     networks:
