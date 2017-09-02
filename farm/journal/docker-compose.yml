@@ -9,13 +9,7 @@ version: "3"
 
 services:
 
-#  base:
-#    env_file:
-#      - my_env.txt
-
   mariadb:
-#    extends:
-#      service: base
     image: mariadb:${MYSQL_VERSION}
     container_name: ${COMPOSE_PROJECT_NAME}_db
     volumes:
@@ -25,13 +19,11 @@ services:
   ojs:
     env_file:
     - .env
-    image: marcbria/docker4ojs:experimental
+    image: marcbria/docker4ojs:version
     hostname: ${COMPOSE_PROJECT_NAME}
-#    build:
-#      context: ..
-#      dockerfile: ../ojs/Dockerfile
     environment:
       - OJS_BRANCH=${OJS_BRANCH:-ojs-stable-2_4_8}
+      - MYSQL_DATABASE="ojs_${COMPOSE_PROJECT_NAME}
     ports:
       - "8081:80"
     links:
@@ -40,4 +32,3 @@ services:
       - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}:127.0.0.1"
     depends_on:
       - mariadb
-    restart: always
