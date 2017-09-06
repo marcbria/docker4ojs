@@ -9,26 +9,32 @@ version: "3"
 
 services:
 
-  mariadb:
-    image: mariadb:${MYSQL_VERSION}
+  db:
+    image: mysql
+    env_file: 
+      - .env
     container_name: ${COMPOSE_PROJECT_NAME}_db
+    environment:
+      - MYSQL_DATABASE=ojs_${COMPOSE_PROJECT_NAME}
     volumes:
+      - /srv/mysql/journal:/var/lib/mysql # I want data to be stored outside docker.
 #      - ./mariadb-init:/docker-entrypoint-initdb.d # Place init .sql file(s) here.
-       - /srv/mysql/journal:/var/lib/mysql # I want data to be stored outside docker.
 
   ojs:
-    env_file:
-    - .env
     image: marcbria/docker4ojs:version
+    env_file: 
+      - .env
+    container_name: ${COMPOSE_PROJECT_NAME}_ojs
     hostname: ${COMPOSE_PROJECT_NAME}
+    healthcheck:
+      test: "exit 0"
     environment:
-      - OJS_BRANCH=${OJS_BRANCH:-ojs-stable-2_4_8}
-      - MYSQL_DATABASE="ojs_${COMPOSE_PROJECT_NAME}
+      - OJS_BRANCH=${OJS_BRANCH}
     ports:
-      - "8081:80"
+      - "${OJS_PORT}:80"
     links:
-      - mariadb:db
+      - db:db
     extra_hosts:
       - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}:127.0.0.1"
     depends_on:
-      - mariadb
+      - db

@@ -40,6 +40,7 @@ RUN cp config.TEMPLATE.inc.php config.inc.php \
     && chown -R www-data:www-data /var/www/
 
 # Setting Apache
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 COPY default.htaccess /var/www/html/.htaccess
 RUN a2enmod rewrite \
     && service apache2 restart 
