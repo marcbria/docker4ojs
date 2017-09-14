@@ -33,9 +33,10 @@ RUN cd /var/www/html \
     && apt-get autoremove -y \
     && apt-get clean -y
 
-# Setting OJS
-RUN cp config.TEMPLATE.inc.php config.inc.php \
-    && chmod ug+rw config.inc.php \
+# Setting OJS: Overwrite template if config exists outside docker.
+RUN cp config.TEMPLATE.inc.php config.inc.php
+COPY config.inc.php /var/www/html/config.inc.php
+RUN chmod ug+rw config.inc.php \
     && mkdir -p /var/www/files/ \
     && chown -R www-data:www-data /var/www/
 
