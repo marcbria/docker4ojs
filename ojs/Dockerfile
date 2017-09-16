@@ -41,8 +41,8 @@ RUN cp config.TEMPLATE.inc.php config.inc.php \
 
 
 # Get mojo
-RUN wget https://raw.githubusercontent.com/marcbria/mojo/master/scripts/mojo.sh \
-    && mv mojo.sh /usr/bin/mojo
+RUN wget https://raw.githubusercontent.com/marcbria/mojo/master/scripts/mojo.sh -O /usr/bin/mojo \
+    && wget https://raw.githubusercontent.com/marcbria/mojo/master/scripts/config.mojo.TEMPLATE -O /usr/bin/config.mojo
 
 # Setting Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
