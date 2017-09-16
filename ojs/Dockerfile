@@ -39,6 +39,10 @@ RUN cp config.TEMPLATE.inc.php config.inc.php \
     && mkdir -p /var/www/files/ \
     && chown -R www-data:www-data /var/www/
 
+# Get mojo
+RUN wget https://raw.githubusercontent.com/marcbria/mojo/master/scripts/mojo.sh \
+    && mv mojo.sh /usr/bin/mojo
+
 # Setting Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 COPY default.htaccess /var/www/html/.htaccess
