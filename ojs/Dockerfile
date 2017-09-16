@@ -42,7 +42,7 @@ RUN cp config.TEMPLATE.inc.php config.inc.php \
 
 # Get mojo
 RUN mkdir -p /opt/mojo 
-RUN git clone -v --progress -b master --single-branch https://github.com/marcbria/mojo.git /opt/mojo /opt/mojo
+RUN git clone -v --progress -b docker --single-branch https://github.com/marcbria/mojo.git /opt/mojo
 RUN ln -s /opt/mojo/mojo.sh /usr/bin/mojo
 
 # Setting Apache
