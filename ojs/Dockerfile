@@ -37,7 +37,7 @@ RUN cd /var/www/html \
 RUN cp config.TEMPLATE.inc.php config.inc.php \
     && chmod ug+rw config.inc.php \
     && mkdir -p /var/www/files/ \
-    && chown -R www-data:www-data /var/www/
+    && chown -R www-data:33 /var/www/
 
 
 # Get mojo

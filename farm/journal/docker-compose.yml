@@ -17,11 +17,13 @@ services:
     environment:
       - MYSQL_DATABASE=ojs_${COMPOSE_PROJECT_NAME}
     volumes:
-      - /srv/mysql/journal:/var/lib/mysql # I want data to be stored outside docker.
-#      - ./mariadb-init:/docker-entrypoint-initdb.d # Place init .sql file(s) here.
+      - ./files/private:/var/www/files                 # Stored files outside docker is recommended.
+      - ./db/data:/var/lib/mysql                       # Stored db data outside docker is recommended.
+      - ./config.inc.php:/var/www/html/config.inc.php  # Stored files outside docker is recommended.
+      # - ./db/init:/docker-entrypoint-initdb.d        # Place init .sql file(s) here.
 
   ojs:
-    image: marcbria/docker4ojs:version
+    image: marcbria/docker4ojs:experimental
     env_file: 
       - .env
     container_name: ${COMPOSE_PROJECT_NAME}_ojs
