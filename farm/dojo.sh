@@ -100,6 +100,11 @@ else
 			docker-compose stop
 			;;
 
+		init)
+			cp base ${Journal} -a
+			mkdir -p backup config db files/public files/private
+			;;
+
 		*)
 			echo "You are going to run docker-compose on [$myJournal] with [$params] params"
 			read -n1 -r -p "Press "Y" if you want to continue... " key

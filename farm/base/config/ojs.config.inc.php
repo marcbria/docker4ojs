@@ -87,7 +87,8 @@ allow_url_fopen = Off
 ; Generate RESTful URLs using mod_rewrite.  This requires the
 ; rewrite directive to be enabled in your .htaccess or httpd.conf.
 ; See FAQ for more details.
-restful_urls = Off
+; restful_urls = Off
+restful_urls = On
 
 ; Allow the X_FORWARDED_FOR header to override the REMOTE_ADDR as the source IP
 ; Set this to "On" if you are behind a reverse proxy and you control the X_FORWARDED_FOR
@@ -126,7 +127,7 @@ driver = mysqli
 host = db
 username = ojs
 password = ojs
-name = ojs_boot3
+name = ojs_db
 
 ; Enable persistent connections
 persistent = Off
@@ -254,7 +255,7 @@ session_check_ip = On
 encryption = sha1
 
 ; The unique salt to use for generating password reset hashes
-salt = "YouMustSetASecretKeyHere!!"
+salt = "YouMustSetASecretBaseKeyHere!!"
 
 ; The number of seconds before a password reset hash expires (defaults to 7200 / 2 hours)
 reset_seconds = 7200
