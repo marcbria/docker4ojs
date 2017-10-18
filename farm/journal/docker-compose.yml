@@ -33,10 +33,10 @@ services:
     environment:
       - OJS_BRANCH=${OJS_BRANCH:-ojs-stable-3_0_2}
     ports:
-      - "${OJS_PORT}:80"
+      - "${OJS_PORT:-8081}:80"
     links:
       - db:db
     extra_hosts:
-      - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN:-journal.localhost}:127.0.0.1"
+      - "${COMPOSE_PROJECT_NAME:-journal}.${PROJECT_DOMAIN:-journal.localhost}:127.0.0.1"
     depends_on:
       - db
