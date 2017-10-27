@@ -1,0 +1,180 @@
+#!/bin/bash
+# export $OJS_BRANCH="ojs-stable-3_0_2"
+
+runMe="dojo.sh"
+action="${1}"
+myJournal="${2}"
+params="${3}"
+dojoPath="/home/dojo/docker4ojs/farm"
+farmPath="/home/dojo/farm"
+
+if [ $# -eq 0 ]; then
+	echo "No arguments supplied..."
+	echo "Syntax:  ./${runMe} <compose-action> <journalName> <compose-params>"
+        echo "More info with ./${runMe} help"
+	exit 1
+fi
+
+if [ $action == "help" ]; then
+        echo "Syntax:  ./${runMe} <compose-action> <journalName> <compose-params>"
+        echo "Example 1: ./${runMe} init journalName"
+        echo "Example 2: ./${runMe} up journalName -d"
+        echo "Example 3: ./${runMe} backup journalName all"
+        echo "Example 4: ./${runMe} restore journalName db"
+        echo "Example 5: ./${runMe} mojo journalName cc"
+else
+	if [ $action == "portainer" ]; then
+		docker run -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer
+		exit 0
+	fi
+
+        if [ $# -lt 2 ]; then
+        	echo "Some arguments are missing..."
+        	echo "More info with ./${runMe} help"
+        	exit 1
+	fi
+
+        if [ ! -f $farmPath/$myJournal/.env ]; then
+		if [ $action == "init" ]; then
+			echo "Base model: $dojoPath/base"
+			echo "Destination: $farmPath/$myJournal"
+			echo ""
+			echo "IMPORTANT: Be sure you setup your $farmPath/$myJournal/.env and config files before run the container."
+                        cp $dojoPath/base $farmPath/$myJournal -a
+			cd $farmPath/$myJournal && mkdir -p backup config db files/public files/private
+			exit 0
+		else
+	                echo "Config file not found at $farmPath/$myJournal"
+			echo "To initiate a new journal run: $ dojo init $myJournal"
+	                echo "Or create your own $myJournal/.env and docker-compose.yml files to fit your needs."
+	                echo "You have an example environment file at $dojoPath/base/.env folder."
+	                exit 1
+		fi
+	else
+		if [ $action == "init" ]; then
+			echo "You can not init an existing journal."
+			echo "Remove $farmPath/$myJournal if you want to start again."
+			exit 1
+		fi
+        fi
+
+	cd $farmPath/$myJournal
+
+	source .env
+
+	case "$action" in
+		env)
+			echo "Compose config variables for journal [$myJournal]:"
+			cat .env
+			;;
+
+		backup)
+			NOW="$(date +"%Y%m%d-%M%S")"
+			mkdir -p backup
+
+			case "$params" in
+				db)
+					docker exec ${myJournal}_db /usr/bin/mysqldump -u root --password=$MYSQL_ROOT_PASSWORD \
+						--all-databases --add-drop-database --events --routines --triggers \
+						ojs_${COMPOSE_PROJECT_NAME} > ./backup/db-${myJournal}-${NOW}.sql
+					tar cvzf ./backup/db-${myJournal}-${NOW}.tgz ./backup/db-${myJournal}-${NOW}.sql
+					rm -f db-${myJournal}-${NOW}.sql
+					ln -s -f ./db-${myJournal}-${NOW}.tgz ./backup/lastBackupDb
+				;;
+				files)
+					tar cvzf ./backup/files-${myJournal}-${NOW}.tgz ./files
+					ln -s -f ./files-${myJournal}-${NOW}.tgz ./backup/lastBackupFiles
+				;;
+				all)
+					# Database:
+					docker exec ${myJournal}_db /usr/bin/mysqldump -u root --password=$MYSQL_ROOT_PASSWORD \
+						ojs_${COMPOSE_PROJECT_NAME} > ./backup/db-${myJournal}-${NOW}.sql
+					tar cvzf ./backup/db-${myJournal}-${NOW}.tgz ./backup/db-${myJournal}-${NOW}.sql
+					rm -f db-${myJournal}-${NOW}.sql
+					ln -s -f ./db-${myJournal}-${NOW}.tgz ./backup/lastBackupDb
+
+					# Files:
+					tar cvzf ./backup/files-${myJournal}-${NOW}.tgz ./files
+					ln -s -f ./files-${myJournal}-${NOW}.tgz ./backup/lastBackupFiles
+
+			esac
+			;;
+
+		restore)
+
+			ojsDBdefault=ojs_${COMPOSE_PROJECT_NAME}
+			ojsDB=${MYSQL_DATABASE:-$ojsDBdefault}
+
+#			echo "Running over ${ojsDB}:"
+#			echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
+#			echo "--> CREATE DATABASE ${ojsDB};"
+#			echo "--> USE ${ojsDB};"
+#
+#			echo "DROP DATABASE IF EXISTS ${ojsDB};
+#				CREATE DATABASE ${ojsDB};
+#				USE ${ojsDB};" \
+#				| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+#				-u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+
+			
+			echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
+			echo "DROP DATABASE IF EXISTS ${ojsDB};" \
+				| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+				-u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+
+			echo "--> CREATE DATABASE ${ojsDB};"
+			echo "CREATE DATABASE ${ojsDB};" \
+				| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+				-u root --password=$MYSQL_ROOT_PASSWORD
+
+			echo "--> USE ${ojsDB};"
+			echo "USE ${ojsDB};" \
+				| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+				-u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+
+			echo "DB ${ojsDB} was created"
+
+			echo "Restoring DB:"
+
+			tar -xzf ./backup/lastBackupDb --to-stdout \
+				| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql --binary-mode \
+				-u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+
+			echo "---> DATA RESTORED in ojs_${COMPOSE_PROJECT_NAME} from backup/lastBackupDb."
+			;;
+
+		upgrade)
+			echo "--> php tools/upgrade.php ${params}"
+                        docker exec ${COMPOSE_PROJECT_NAME}_ojs \
+				php tools/upgrade.php ${params}
+			;;
+
+                mojo)
+                        # docker exec ${COMPOSE_PROJECT_NAME}_ojs bash -c "/usr/bin/mojo ${@:3}"
+                        docker exec ${COMPOSE_PROJECT_NAME}_ojs \
+				/usr/bin/mojo ${@:3}
+			;;
+
+                stop)
+			./${runMe} backup ${Journal} all
+			# docker cp ${myJournal}_ojs:/var/www/html/config.inc.php config.inc.php
+			docker-compose stop
+			;;
+
+		*)
+			echo "You are going to run docker-compose on [$myJournal] with [$params] params"
+			read -n1 -r -p "Press "Y" if you want to continue... " key
+
+			if [ "$key" = 'Y' ]; then
+				echo ""
+				docker-compose ${action} ${params}
+				# docker cp config.inc.php ${myJournal}_ojs:/var/www/html/config.inc.php
+			else
+			    echo ""
+			    echo "You must press Y (case sensitive) to apply changes."
+			    echo "Operation aborted"
+			    exit 1
+			fi
+		;;
+	esac
+fi

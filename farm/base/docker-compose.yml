@@ -15,7 +15,7 @@ services:
       - .env
     container_name: ${COMPOSE_PROJECT_NAME}_db
     environment:
-      - MYSQL_DATABASE=ojs_${COMPOSE_PROJECT_NAME}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
     volumes:
       - ./db:/var/lib/mysql                       # Stored db data outside docker is recommended.
       # - ./db/init:/docker-entrypoint-initdb.d        # Place init .sql file(s) here.
@@ -38,7 +38,7 @@ services:
     healthcheck:
       test: "exit 0"
     environment:
-      - OJS_BRANCH=${OJS_BRANCH}
+      - OJS_BRANCH=${OJS_BRANCHi:-ojs-stable-3_1_0}
     ports:
       - "${OJS_PORT}:80"
     links:
@@ -51,6 +51,6 @@ services:
       - ./config/php.custom.ini:/usr/local/etc/php/conf.d/custom.ini
     extra_hosts:
       - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}:127.0.0.1"
-      - "revistes.uab.test:158.109.174.224"
+      # - "revistes.uab.test:158.109.174.224"
     depends_on:
       - db
