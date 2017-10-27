@@ -27,6 +27,11 @@ RUN cd lib/pkp \
     && curl -sS https://getcomposer.org/installer | php \
     && php composer.phar update 
 
+# Get mojo
+RUN mkdir -p /opt/mojo
+RUN git clone -v --progress -b docker --single-branch https://github.com/marcbria/mojo.git /opt/mojo
+RUN ln -s /opt/mojo/mojo.sh /usr/bin/mojo
+
 # Clean up
 RUN cd /var/www/html \
     && find . | grep .git | xargs rm -rf \
@@ -39,12 +44,6 @@ RUN cp config.TEMPLATE.inc.php config.inc.php \
     && chmod ug+rw config.inc.php \
     && mkdir -p /var/www/files/ \
     && chown -R www-data:33 /var/www/
-
-
-# Get mojo
-RUN mkdir -p /opt/mojo 
-RUN git clone -v --progress -b docker --single-branch https://github.com/marcbria/mojo.git /opt/mojo
-RUN ln -s /opt/mojo/mojo.sh /usr/bin/mojo
 
 # Setting Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
