@@ -15,7 +15,7 @@ services:
       - .env
     container_name: ${COMPOSE_PROJECT_NAME:-journal}_db
     environment:
-      - MYSQL_DATABASE=ojs_${COMPOSE_PROJECT_NAME:-journal}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ojs_db}
     volumes:
       - ./files/private:/var/www/files                 # Stored files outside docker is recommended.
       - ./db/data:/var/lib/mysql                       # Stored db data outside docker is recommended.
@@ -31,7 +31,7 @@ services:
     healthcheck:
       test: "exit 0"
     environment:
-      - OJS_BRANCH=${OJS_BRANCH:-ojs-stable-3_0_2}
+      - OJS_BRANCH=${OJS_BRANCH:-ojs-stable-3_1_0}
     ports:
       - "${OJS_PORT:-8081}:80"
     links:
