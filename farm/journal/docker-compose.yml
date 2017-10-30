@@ -30,8 +30,8 @@ services:
     hostname: ${COMPOSE_PROJECT_NAME:-journal}
     healthcheck:
       test: "exit 0"
-    environment:
-      - OJS_BRANCH=${OJS_BRANCH:-ojs-stable-3_1_0}
+#    environment:
+#      - OJS_BRANCH=${OJS_BRANCH:-ojs-stable-3_1_0}
     ports:
       - "${OJS_PORT:-8081}:80"
     links:
