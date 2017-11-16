@@ -1,7 +1,7 @@
 #!/bin/bash
 # export $OJS_BRANCH="ojs-stable-3_0_2"
 
-runMe="dojo.sh"
+runMe="dojo"
 action="${1}"
 myJournal="${2}"
 params="${3}"
@@ -10,43 +10,52 @@ farmPath="/home/dojo/farm"
 
 if [ $# -eq 0 ]; then
 	echo "No arguments supplied..."
-	echo "Syntax:  ./${runMe} <compose-action> <journalName> <compose-params>"
+	echo "Syntax:  ${runMe} <compose-action> <journalName> <compose-params>"
         echo "More info with ./${runMe} help"
 	exit 1
 fi
 
 if [ $action == "help" ]; then
-        echo "Syntax:  ./${runMe} <compose-action> <journalName> <compose-params>"
-        echo "Example 1: ./${runMe} init journalName"
-        echo "Example 2: ./${runMe} up journalName -d"
-        echo "Example 3: ./${runMe} backup journalName all"
-        echo "Example 4: ./${runMe} restore journalName db"
-        echo "Example 5: ./${runMe} mojo journalName cc"
+        echo "Syntax:  ${runMe} <compose-action> <journalName> <compose-params>"
+        echo "Example 1: ${runMe} create journalName"
+        echo "Example 2: ${runMe} up journalName -d"
+        echo "Example 3: ${runMe} backup journalName all"
+        echo "Example 4: ${runMe} restore journalName db"
+#        echo "Example 5: ${runMe} mojo journalName cc (underconstruction)"
+        echo "Example 6: ${runMe} upgrade journalName"
+        echo "Example 7: ${runMe} remove journalName "
+        echo "Example 8: ${runMe} list "
+        echo "Example 9: ${runMe} portainer"
 else
 	if [ $action == "portainer" ]; then
 		docker run -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer
 		exit 0
 	fi
 
+	if [ $action == "list" ]; then
+		docker ps | grep ojs | awk '{ print $12 }'
+		exit 0
+	fi
+
         if [ $# -lt 2 ]; then
         	echo "Some arguments are missing..."
-        	echo "More info with ./${runMe} help"
+        	echo "More info with > ${runMe} help"
         	exit 1
 	fi
 
         if [ ! -f $farmPath/$myJournal/.env ]; then
-		if [ $action == "init" ]; then
+		if [ $action == "create" ]; then
 			echo "Base model: $dojoPath/base"
 			echo "Destination: $farmPath/$myJournal"
 			echo ""
 			echo "IMPORTANT: Be sure you setup your $farmPath/$myJournal/.env and config files before run the container."
                         cp $dojoPath/base $farmPath/$myJournal -a
-			cd $farmPath/$myJournal && mkdir -p backup config db files/public files/private
+			cd $farmPath/$myJournal && mkdir -p backup config db files/public files/private files/logs
 			exit 0
 		else
-	                echo "Config file not found at $farmPath/$myJournal"
-			echo "To initiate a new journal run: $ dojo init $myJournal"
-	                echo "Or create your own $myJournal/.env and docker-compose.yml files to fit your needs."
+	                echo "Config file not found at $farmPath/$myJournal/.env"
+			echo "To start a clean journal run: $ dojo create $myJournal"
+	                echo "Or set your own $myJournal/.env and docker-compose.yml files to fit your needs."
 	                echo "You have an example environment file at $dojoPath/base/.env folder."
 	                exit 1
 		fi
@@ -66,6 +75,15 @@ else
 		env)
 			echo "Compose config variables for journal [$myJournal]:"
 			cat .env
+			;;
+
+		remove)
+			echo "Docks to be removed: "
+			docker ps -a | grep ${myJournal} | grep ${params} && \
+			docker ps -a | grep ${myJournal} | grep ${params} | awk '{ print $1 }' | xargs -I {} docker rm {}
+			# docker rm ${myJournal}_${params}
+			# Call dojo to remove all images
+			# $0 down $myJournal "--rmi all"
 			;;
 
 		backup)
@@ -156,7 +174,7 @@ else
 			;;
 
                 stop)
-			./${runMe} backup ${Journal} all
+			$0 backup ${Journal} all
 			# docker cp ${myJournal}_ojs:/var/www/html/config.inc.php config.inc.php
 			docker-compose stop
 			;;
