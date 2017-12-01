@@ -23,7 +23,7 @@
 #       LICENSE:  GPL 3
 #       CREATED:  29/08/17 02:01:15 CEST
 #       UPDATED:  01/12/17 13:18:12 CEST
-#      REVISION:  1.03
+#      REVISION:  1.04
 #===============================================================================
 
 # Script's Config vars:
@@ -67,7 +67,7 @@ confirm() {
 }
 
 ###############################################################################
-# Helper function to die with elegance.
+# Helper function to die with dignity
 # Arguments:
 #   String: Text to print before leaving the world (Default: "")
 # Returns:
@@ -75,11 +75,11 @@ confirm() {
 ###############################################################################
 die()
 {
-	local _ret=$2
-	test -n "$_ret" || _ret=1
-	test "$1" = "" && print_help >&2
-	echo "$1" >&2
-	exit ${_ret}
+    local _ret=$2
+    test -n "$_ret" || _ret=1
+    test "$1" = "" && print_help >&2
+    echo "$1" >&2
+    exit ${_ret}
 }
 
 
@@ -131,7 +131,7 @@ getParams() {
             fi
         ;;
 
-	# One argument
+	# One argument (at least)
         list|l|\
         stop|\
         down|\
@@ -144,6 +144,7 @@ getParams() {
             else
                 pAction="${1}"
                 pSite="${2}"
+		params="${@:2}"
             fi
         ;;
 
@@ -295,7 +296,11 @@ case $pAction in
     ;;
 
     list|l)
-	docker ps --all | grep ${params:-ojs} | awk '{ print $12 "\t" $7 "\t" $8" "$9" "$10 "\t" $11 }' | column -t
+	echo $params
+	# docker ps --all | column -ts $'\t'
+	# echo "======================================="
+	# docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk 'BEGIN{FS="\t"}{ print $5 "\t" $6 "\t" $7 }' | column -ts $'\t'
+	docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk '{ print $12 "\t" $7 "\t" $8" "$9" "$10 "\t" $11 }' | column -ts $'\t'
         exit 0
     ;;
 
