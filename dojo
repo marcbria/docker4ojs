@@ -1,0 +1,545 @@
+#!/bin/bash
+
+# ===============================================================================
+#          FILE:  dojo
+#
+#         USAGE:  dojo <pAction> <pSite> [<params>]
+#
+#   DESCRIPTION:  A docker/docker-compose wrapper to keep a farm of OxS sites.
+#
+#    PARAMETERS:
+#     <pAction>:  Action to be performed (compose actions are also accepted).
+#   <siteAlias>:  Short name (aka. alias) of the site to be operated.
+#                 ToDO: The tag ALL will be reserved to operate against all
+#                       the sites of the system (Not implemented yet).
+#      <params>:  (optional) Just in case <pAction> requires extra parameters.
+#
+#       OPTIONS:  ---
+#  REQUIREMENTS:  sed, docker, docker-compose, ojs
+#     TODO/BUGS:  Parameters are positional (I don't like getopt or getopts)
+#         NOTES:  ---
+#        AUTHOR:  Marc Bria (MBR), marc.bria@uab.cat
+#       COMPANY:  UAB - SdP - ReDi
+#       LICENSE:  GPL 3
+#       CREATED:  29/08/17 02:01:15 CEST
+#       UPDATED:  01/12/17 13:18:12 CEST
+#      REVISION:  1.03
+#===============================================================================
+
+# Script's Config vars:
+sitePath="/home/dojo/sites" 	# Where are the sites?
+
+# Get script's full path and folder:
+dojoRun="`readlink -e $0`"
+dojoPath="$(dirname $dojoRun)"
+
+# Keeping folder to come back after running script.
+BACKCD=$(pwd)
+
+# Time is useful for logs and backups:
+NOW="$(date +"%Y%m%d-%M%S")"
+
+# Global vars (script's arguments):
+pAction="${1}"
+pSite="${2}"
+params="${3}"
+
+
+###############################################################################
+# Helper function to ask for a confirmation
+# Arguments:
+#   String: Text for the question (Default: Are you sure [y/N]?)
+# Returns:
+#   Boolean
+###############################################################################
+confirm() {
+    # call with a prompt string or use a default
+    read -r -p "${1:-Are you sure? [y/N]} " response
+    case $response in
+        [yY][eE][sS]|[yY])
+            false
+        ;;
+
+        *)
+            true
+        ;;
+    esac
+}
+
+###############################################################################
+# Helper function to die with elegance.
+# Arguments:
+#   String: Text to print before leaving the world (Default: "")
+# Returns:
+#   Boolean
+###############################################################################
+die()
+{
+	local _ret=$2
+	test -n "$_ret" || _ret=1
+	test "$1" = "" && print_help >&2
+	echo "$1" >&2
+	exit ${_ret}
+}
+
+
+# Helper function to test params (to be deleted)
+showParams() {
+    echo "SETPARAMS:   $@"
+    echo "pAction:     $pAction"
+    echo "pSite:       $pSite"
+    echo "params:      $params"
+    echo "pBackupId:   $pBackupId"
+    echo "pPreBackup:  $pPreBackup"
+    echo "pCheckpoint: $pCheckpoint"
+}
+
+###############################################################################
+# Helper function to get the command-line arguments.
+# I don't like getopt/getopts. I prefer positional.
+# Global:
+#   pAction
+#   pSite
+#   params
+# Arguments:
+#   Array: Params to be processed (normally it will be "$@")
+# Returns:
+#   0 if error
+###############################################################################
+getParams() {
+    #op = $1
+    #shift $((OPTIND-1))
+
+    if [ $# -eq 0 ]; then
+        echo "No arguments supplied..."
+        echo "Syntax:  dojo <compose-action> <journalName> <compose-params>"
+        echo "Need more help? $ dojo help"
+        exit 1
+    fi
+
+    case "${1}" in
+
+	# No arguments
+        help|h|\
+        portainer)
+            if [ $# -gt 1 ]; then
+                echo "Too much arguments..."
+                echo "Try with: dojo help"
+                exit 0
+            else 
+                pAction="${1}"
+            fi
+        ;;
+
+	# One argument
+        list|l|\
+        stop|\
+        down|\
+        remove|\
+	env|e)
+            if [ $# -gt 2 ]; then
+                echo "Too much arguments..."
+                echo "Try with: dojo help"
+                exit 0
+            else
+                pAction="${1}"
+                pSite="${2}"
+            fi
+        ;;
+
+	# Two arguments
+        up|u|\
+        create|c|\
+        backup|b|\
+        restore|\
+        mojo|m|\
+        upgrade)
+            if [ $# -lt 3 ]; then
+                echo "Missing arguments..."
+                echo "Try with: dojo help"
+                exit 0
+            fi
+            if [ $# -gt 3 ]; then
+                echo "Too much arguments..."
+                echo "Try with: dojo help"
+                exit 0
+            else
+                pAction="${1}"
+                pSite="${2}"
+                params="${3}"
+            fi
+        ;;
+
+	# Any arguments
+	com-build|\
+	com-bundle|\
+	com-config|\
+	com-create|\
+	com-down|\
+	com-events|\
+	com-exec|\
+	com-help|\
+	com-images|\
+	com-kill|\
+	com-logs|\
+	com-pause|\
+	com-port|\
+	com-ps|\
+	com-pull|\
+	com-push|\
+	com-restart|\
+	com-rm|\
+	com-run|\
+	com-scale|\
+	com-start|\
+	com-stop|\
+	com-top|\
+	com-unpause|\
+	com-up|\
+	com-version)
+	    # Passthrough docker-compose:
+	;;
+
+	# Unknown action
+        *)
+            echo "Action unknown..."
+            echo "Try with: dojo help"
+            exit 0
+        ;;
+    esac
+
+    # DEBUG
+    # showParams
+}
+
+
+###############################################################################
+# Prints help message.
+# Arguments:
+#   None
+# Returns:
+#   Nothing
+###############################################################################
+print_help ()
+{
+cat <<-EOF
+	Usage: dojo action [<site> [<params>]]
+	       <action>: Action to be performed.
+	       <site>:   Site where the action need to be executed.
+	       <params>: Additional parameters (when is required)
+
+	Full list of dojo actions:
+	      help (h):           Script syntax.
+	      list (l):           List all active sites.
+	      env (e):            Shows the environment vars of the specified <site>.
+	      create (c):         Create a <site> based on model.
+	         |_ port-number:  A free external port for the dock.
+	      up:                 Rises the specified <site>.
+	         |_ dock-params:  "-d" if you want a detached dock (optional).
+	      stop:               Stops the specified <site>.
+	      down:               Removes the specified <site>.
+	      backup:             Backups a <site>.
+	         |_ db:		  for database
+	         |_ files:        for files folder
+	         |_ all:          for both
+	      restore:            Restores a <site>.
+	         |_ db:           for database
+	         |_ files:        for files folder
+	         |_ all:          for both
+	      upgrade:            Runs upgrade.php script in the specified <site>.
+	         |_ check:        Check's versions.
+	         |_ update:       Performs the site update.
+	      remove:             Removes <site>'s dock and images (keeping volumes).
+	      com-*:              Compose Actions: Bypases the command and params to docker-compose.
+	      portainer:          Starts a portainer dock in port 9000.
+
+	Some examples: 
+	      $ dojo list
+	      $ dojo create myJournal 8081
+	      $ dojo up myJournal -d
+	      $ dojo stop myJournal
+	      $ dojo down myJournal
+	      $ dojo backup myJournal db
+	      $ dojo restore myJournal files
+	      $ dojo upgrade myJournal check
+	      $ dojo com-ps myJournal
+	      $ dojo portainer
+
+	EOF
+}
+
+
+# Checks if the file exists in the specified path.
+checkFile () {
+    if [[ ! -f "${1}" ]]; then
+        echo "File not found at [${1}]"
+        exit 1
+    fi
+}
+
+
+###############################################################################
+# MAIN
+###############################################################################
+
+
+# Get global variables from command-line arguments.
+getParams $@
+
+# TODO(marc): Set the image version
+# export $OJS_BRANCH="ojs-stable-3_0_2"
+
+case $pAction in
+    help|h)
+        print_help
+    ;;
+
+    list|l)
+	docker ps --all | grep ${params:-ojs} | awk '{ print $12 "\t" $7 "\t" $8" "$9" "$10 "\t" $11 }' | column -t
+        exit 0
+    ;;
+
+    portainer)
+        docker run -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer
+        exit 0
+    ;;
+
+    traefik)	# UNDERCONSTRUCTION
+        exit 0
+    ;;
+
+    create|c)
+        if [ ! -d $sitePath/$pSite ]; then
+            echo "Base model: $dojoPath/base"
+            echo "Destination: $sitePath/$pSite"
+            echo ""
+            echo "IMPORTANT: Be sure you setup your $sitePath/$pSite/.env and config files before rising the container."
+            echo ""
+
+            # In a single "transaction":
+            cp $dojoPath/sites/base $sitePath/$pSite -a && \
+            mkdir -p $sitePath/$pSite/backup && \
+            mkdir -p $sitePath/$pSite/config && \
+            mkdir -p $sitePath/$pSite/db && \
+            mkdir -p $sitePath/$pSite/files/public && \
+            mkdir -p $sitePath/$pSite/files/private && \
+            mkdir -p $sitePath/$pSite/files/logs && \
+            sed -i -e "s!OJS_PORT=NOTSET!OJS_PORT=${params}!g" "$sitePath/$pSite/.env" && \
+            sed -i -e "s!COMPOSE_PROJECT_NAME=NOTSET!COMPOSE_PROJECT_NAME=${pSite}!g" "$sitePath/$pSite/.env" && \
+            sed -i -e "s!PROJECT_DOMAIN=NOTSET.ojs.localhost!PROJECT_DOMAIN=${pSite}.ojs.localhost!g" "$sitePath/$pSite/.env" && \
+            exit 0
+
+            # If someting fails in the former transiction, exits with error.
+            exit 1
+        else
+            echo "Folder $sitePath/$pSite exists, so can NOT be created."
+            echo "Remove $sitePath/$pSite if you want to start again."
+            exit 1
+        fi
+    ;;
+
+    env|e)
+        # ENV variables are required:
+        checkFile $sitePath/$pSite/.env && echo "ENV file not found."
+        echo "Compose config variables for journal [$pSite]:"
+        cat $sitePath/$pSite/.env
+        # source $sitePath/$pSite/.env
+    ;;
+
+    remove)
+        echo "Docks to be removed: "
+        docker ps -a | grep ${pSite} | grep ${params} && \
+        docker ps -a | grep ${pSite} | grep ${params} | awk '{ print $1 }' | xargs -I {} docker rm {}
+        # docker rm ${pSite}_${params}
+        # Call dojo to remove all images
+        # $0 down $pSite "--rmi all"
+    ;;
+
+
+    backup|b)
+        checkFile $sitePath/$pSite/.env
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        case "$params" in
+            db)
+                docker exec ${pSite}_db /usr/bin/mysqldump -u root --password=$MYSQL_ROOT_PASSWORD \
+                       --all-databases --add-drop-database --events --routines --triggers \
+                       ojs_${COMPOSE_PROJECT_NAME} > ./backup/db-${pSite}-${NOW}.sql
+                tar cvzf ./backup/db-${pSite}-${NOW}.tgz ./backup/db-${pSite}-${NOW}.sql
+                rm -f db-${pSite}-${NOW}.sql
+                ln -s -f ./db-${pSite}-${NOW}.tgz ./backup/lastBackupDb
+            ;;
+
+            files)
+                tar cvzf ./backup/files-${pSite}-${NOW}.tgz ./files
+                ln -s -f ./files-${pSite}-${NOW}.tgz ./backup/lastBackupFiles
+            ;;
+
+            all)
+                # Database:
+                docker exec ${pSite}_db /usr/bin/mysqldump -u root --password=$MYSQL_ROOT_PASSWORD \
+                       ojs_${COMPOSE_PROJECT_NAME} > ./backup/db-${pSite}-${NOW}.sql
+                tar cvzf ./backup/db-${pSite}-${NOW}.tgz ./backup/db-${pSite}-${NOW}.sql
+                rm -f db-${pSite}-${NOW}.sql
+                ln -s -f ./db-${pSite}-${NOW}.tgz ./backup/lastBackupDb
+
+                # Files:
+                tar cvzf ./backup/files-${pSite}-${NOW}.tgz ./files
+                ln -s -f ./files-${pSite}-${NOW}.tgz ./backup/lastBackupFiles
+
+        esac
+    ;;
+
+    restore)
+        checkFile $sitePath/$pSite/.env 
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        ojsDBdefault=ojs_${COMPOSE_PROJECT_NAME}
+        ojsDB=${MYSQL_DATABASE:-$ojsDBdefault}
+
+        case "$params" in
+            db)
+	        echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
+	        echo "DROP DATABASE IF EXISTS ${ojsDB};" \
+	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+
+	        echo "--> CREATE DATABASE ${ojsDB};"
+	        echo "CREATE DATABASE ${ojsDB};" \
+	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+	                -u root --password=$MYSQL_ROOT_PASSWORD
+
+	        echo "--> USE ${ojsDB};"
+	        echo "USE ${ojsDB};" \
+	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+
+	        echo "DB ${ojsDB} was created"
+
+	        echo "Restoring DB:"
+
+	        tar -xzf ./backup/lastBackupDb --to-stdout \
+                	| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql --binary-mode \
+	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+
+	        echo "---> DATA RESTORED in ojs_${COMPOSE_PROJECT_NAME} from backup/lastBackupDb."
+
+                #       An alternative:
+                #       echo "Running over ${ojsDB}:"
+                #       echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
+                #       echo "--> CREATE DATABASE ${ojsDB};"
+                #       echo "--> USE ${ojsDB};"
+                #
+                #       echo "DROP DATABASE IF EXISTS ${ojsDB};
+                #       CREATE DATABASE ${ojsDB};
+                #               USE ${ojsDB};" \
+                #               | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+                #               -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+	    ;;
+
+            files)
+		mv ./files ./files-${NOW}
+		tar xvzf ./backup/lastBackupFiles .
+            ;;
+
+	    all)
+		dojo restore $pSite db
+		dojo restore $sSite files
+
+	esac
+    ;;
+
+
+    upgrade)
+        checkFile $sitePath/$pSite/.env
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        echo "--> php tools/upgrade.php ${params}"
+        docker exec ${COMPOSE_PROJECT_NAME}_ojs \
+        php tools/upgrade.php ${params}
+    ;;
+
+    mojo|m)
+        checkFile $sitePath/$pSite/.env
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        # docker exec ${COMPOSE_PROJECT_NAME}_ojs bash -c "/usr/bin/mojo ${@:3}"
+        docker exec ${COMPOSE_PROJECT_NAME}_ojs \
+               /usr/bin/mojo ${@:3}
+    ;;
+
+    up|u)
+        checkFile $sitePath/$pSite/.env
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        echo "You are going to rise docker-compose on [$pSite] with [$params] params"
+        confirm && exit 1
+        echo ""
+
+        docker-compose --project-directory $sitePath/$pSite up ${params}
+    ;;
+
+    down)
+        checkFile $sitePath/$pSite/.env
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        echo "You are going to rise docker-compose on [$pSite] with [$params] params"
+        confirm && exit 1
+        echo ""
+
+        docker-compose -f $sitePath/$pSite/docker-compose.yml down ${params}
+    ;;
+
+    stop)
+        checkFile $sitePath/$pSite/.env
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        $0 backup ${Journal} all
+        docker-compose -f $sitePath/$pSite/docker-compose.yml stop
+    ;;
+
+    com-*)
+        # Not all compose commands need an env:
+
+	if [[ $pSite ]]; then
+		checkFile $sitePath/$pSite/.env
+		cd $sitePath/$pSite
+        	source $sitePath/$pSite/.env
+	fi
+
+	composeAction=(${pAction//-/ })
+
+        # echo "You are going to run [${composeAction[1]}] with docker-compose on site [$pSite] with [${@:3}] params"
+        echo "Running on site [$pSite]: $ docker-compose ${composeAction[1]} ${@:3}" 
+        confirm && exit 1
+        echo ""
+
+        docker-compose ${composeAction[1]} ${@:3}
+    ;;
+
+    *)
+	# Arg validation won't let you arrive here. 
+        # Keeping this to test new features.
+
+        checkFile $sitePath/$pSite/.env
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        echo "You are going to run docker-compose on [$pSite] with [$params] params"
+	confirm "Press "Y" if you want to continue... " && exit 1
+
+        echo ""
+        docker-compose -f $sitePath/$pSite/docker-compose.yml ${pAction} ${params}
+        # docker cp config.inc.php ${pSite}_ojs:/var/www/html/config.inc.php
+    ;;
+esac
+
+# Back to the calling folder:
+cd $BACKCD #> /dev/null

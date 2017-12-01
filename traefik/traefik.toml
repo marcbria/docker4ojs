@@ -1,0 +1,37 @@
+logLevel = "DEBUG"
+defaultEntryPoints = ["http", "https"]
+
+# WEB interface of Traefik - it will show web page with overview 
+# of frontend and backend configurations 
+[web]
+address = ":8080"
+  [web.auth.basic]
+  users = ["admin:$apr1$EnYf63Vn$v41Z5XQd6t56y6CWGV3QJ1"]
+
+# Connection to docker host system (docker.sock)
+[docker]
+domain = "ada.uab.cat"
+watch = true
+# This will hide all docker containers that don't have explicitly  
+# set label to "enable"
+exposedbydefault = false
+
+# Force HTTPS
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+    [entryPoints.http.redirect]
+    entryPoint = "https"
+  [entryPoints.https]
+  address = ":443"
+    [entryPoints.https.tls]
+  
+# Enable ACME (Let's Encrypt): automatic SSL
+[acme]
+# caServer = "https://acme-staging.api.letsencrypt.org/directory"
+  email="marc.bria@uab.es"
+  storage="/etc/traefik/acme.json"
+  entryPoint="https"
+  acmeLogging=true
+  onDemand=true
+  OnHostRule=true

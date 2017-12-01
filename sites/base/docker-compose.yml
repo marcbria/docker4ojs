@@ -51,5 +51,9 @@ services:
     extra_hosts:
       - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}:127.0.0.1"
       # - "revistes.uab.test:158.109.174.224"
+    labels:
+      - 'traefik.backend=${COMPOSE_PROJECT_NAME}_ojs'
+      - 'traefik.port=${OJS_PORT}'
+      - 'traefik.frontend.rule=Host:ada.uab.cat'
     depends_on:
       - db
