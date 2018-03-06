@@ -22,8 +22,8 @@
 #       COMPANY:  UAB - SdP - ReDi
 #       LICENSE:  GPL 3
 #       CREATED:  29/08/17 02:01:15 CEST
-#       UPDATED:  01/12/17 13:18:12 CEST
-#      REVISION:  1.04
+#       UPDATED:  02/02/18 13:18:12 CEST
+#      REVISION:  1.06
 #===============================================================================
 
 # Script's Config vars:
@@ -88,7 +88,8 @@ showParams() {
     echo "SETPARAMS:   $@"
     echo "pAction:     $pAction"
     echo "pSite:       $pSite"
-    echo "params:      $params"
+    param=${params[*]}
+    echo "params:      $param"
     echo "pBackupId:   $pBackupId"
     echo "pPreBackup:  $pPreBackup"
     echo "pCheckpoint: $pCheckpoint"
@@ -98,9 +99,9 @@ showParams() {
 # Helper function to get the command-line arguments.
 # I don't like getopt/getopts. I prefer positional.
 # Global:
-#   pAction
-#   pSite
-#   params
+#   pAction: Action to be performed.
+#   pSite: Site or journal where we need to apply the action.
+#   params: The following parameters.
 # Arguments:
 #   Array: Params to be processed (normally it will be "$@")
 # Returns:
@@ -131,7 +132,7 @@ getParams() {
             fi
         ;;
 
-	# One argument (at least)
+	# One argument (max 2)
         list|l|\
         stop|\
         down|\
@@ -144,18 +145,19 @@ getParams() {
             else
                 pAction="${1}"
                 pSite="${2}"
-		params="${@:2}"
+		params="${3}"
             fi
         ;;
 
-	# Two arguments
+	# Two arguments (max 3)
         up|u|\
         create|c|\
         backup|b|\
         restore|\
+        restart|\
         mojo|m|\
         upgrade)
-            if [ $# -lt 3 ]; then
+            if [ $# -lt 2 ]; then
                 echo "Missing arguments..."
                 echo "Try with: dojo help"
                 exit 0
@@ -170,6 +172,28 @@ getParams() {
                 params="${3}"
             fi
         ;;
+
+	# Five arguments
+        # Syntax example: dojo var <journalTag> <context> <varName> <varValue>
+        var|v)
+
+	    # TODO!!!
+            if [ $# -lt 5 ]; then
+                echo "Missing arguments..."
+                echo "Try with: dojo help"
+                exit 0
+            fi
+            if [ $# -gt 6 ]; then
+                echo "Too much arguments..."
+                echo "Try with: dojo help"
+                exit 0
+            else
+                pAction="${1}"
+                pSite="${2}"
+                params=( ${@:3} )
+            fi
+        ;;
+
 
 	# Any arguments
 	com-build|\
@@ -199,6 +223,9 @@ getParams() {
 	com-up|\
 	com-version)
 	    # Passthrough docker-compose:
+            pAction="${1}"
+            pSite="${2}"
+            params="${@:3}"
 	;;
 
 	# Unknown action
@@ -251,6 +278,10 @@ cat <<-EOF
 	         |_ check:        Check's versions.
 	         |_ update:       Performs the site update.
 	      remove:             Removes <site>'s dock and images (keeping volumes).
+	      restart:            Stops and Ups a <site> (keeping volumes).
+	      var (v):            Get or shows a variable.
+	         |_ get:          Syntax: dojo var <journalTag> get ojs <variable> 
+	         |_ set:          Syntax: dojo var <journalTag> set ojs <variable> <varValue>
 	      com-*:              Compose Actions: Bypases the command and params to docker-compose.
 	      portainer:          Starts a portainer dock in port 9000.
 
@@ -260,6 +291,7 @@ cat <<-EOF
 	      $ dojo up myJournal -d
 	      $ dojo stop myJournal
 	      $ dojo down myJournal
+	      $ dojo restart myJournal -d
 	      $ dojo backup myJournal db
 	      $ dojo restore myJournal files
 	      $ dojo upgrade myJournal check
@@ -329,6 +361,9 @@ case $pAction in
             mkdir -p $sitePath/$pSite/files/public && \
             mkdir -p $sitePath/$pSite/files/private && \
             mkdir -p $sitePath/$pSite/files/logs && \
+	    chown dojo:docker $sitePath/$pSite -R && \
+	    chmod 777 $sitePath/$pSite/files -R && \
+	    chmod 777 $sitePath/$pSite/config -R && \
             sed -i -e "s!OJS_PORT=NOTSET!OJS_PORT=${params}!g" "$sitePath/$pSite/.env" && \
             sed -i -e "s!COMPOSE_PROJECT_NAME=NOTSET!COMPOSE_PROJECT_NAME=${pSite}!g" "$sitePath/$pSite/.env" && \
             sed -i -e "s!PROJECT_DOMAIN=NOTSET.ojs.localhost!PROJECT_DOMAIN=${pSite}.ojs.localhost!g" "$sitePath/$pSite/.env" && \
@@ -360,6 +395,13 @@ case $pAction in
         # $0 down $pSite "--rmi all"
     ;;
 
+    restart)
+        checkFile $sitePath/$pSite/.env
+        cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+        dojo stop ${pSite}
+	dojo up ${pSite} ${params}
+    ;;
 
     backup|b)
         checkFile $sitePath/$pSite/.env
@@ -401,25 +443,29 @@ case $pAction in
 	cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
-        ojsDBdefault=ojs_${COMPOSE_PROJECT_NAME}
-        ojsDB=${MYSQL_DATABASE:-$ojsDBdefault}
+        # ojsDBdefault=ojs_${COMPOSE_PROJECT_NAME}
+        # ojsDB=${MYSQL_DATABASE:-$ojsDBdefault}
+        ojsDB=${MYSQL_DATABASE:-ojs_db}
 
         case "$params" in
             db)
 	        echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
 	        echo "DROP DATABASE IF EXISTS ${ojsDB};" \
 	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
-	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
+			2>&1 | grep -v "Using a password on the command line interface can be insecure"
 
 	        echo "--> CREATE DATABASE ${ojsDB};"
 	        echo "CREATE DATABASE ${ojsDB};" \
 	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
-	                -u root --password=$MYSQL_ROOT_PASSWORD
+	                -u root --password=$MYSQL_ROOT_PASSWORD \
+			2>&1 | grep -v "Using a password on the command line interface can be insecure"
 
 	        echo "--> USE ${ojsDB};"
 	        echo "USE ${ojsDB};" \
 	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
-	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
+			2>&1 | grep -v "Using a password on the command line interface can be insecure"
 
 	        echo "DB ${ojsDB} was created"
 
@@ -427,7 +473,8 @@ case $pAction in
 
 	        tar -xzf ./backup/lastBackupDb --to-stdout \
                 	| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql --binary-mode \
-	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
+			2>&1 | grep -v "Using a password on the command line interface can be insecure"
 
 	        echo "---> DATA RESTORED in ojs_${COMPOSE_PROJECT_NAME} from backup/lastBackupDb."
 
@@ -467,6 +514,26 @@ case $pAction in
         php tools/upgrade.php ${params}
     ;;
 
+    var|v)
+        # Syntax:  dojo var <journalTag> <subaction> <context> <varName> <varValue>
+        # Example: dojo var athenea set ojs installed Off
+        checkFile $sitePath/$pSite/.env
+	cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+	if [[ ${params[1]} -eq "ojs" ]]; then
+	        case ${params[0]} in
+			get)
+				cat ${sitePath}/${pSite}/config/ojs.config.inc.php | grep ${params[2]} | grep "="
+			;;
+			set)
+				echo "Setting variable in config.inc.php for journal [$pSite] as: ${params[2]} = ${params[3]}"
+				sed -i -e "s/^${params[2]} =.*/${params[2]} = ${params[3]}/" ${sitePath}/${pSite}/config/ojs.config.inc.php
+			;;
+		esac
+	fi
+    ;;
+
     mojo|m)
         checkFile $sitePath/$pSite/.env
 	cd $sitePath/$pSite
@@ -482,7 +549,7 @@ case $pAction in
 	cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
-        echo "You are going to rise docker-compose on [$pSite] with [$params] params"
+        echo "You are going to RISE docker-compose on [$pSite] with [$params] params"
         confirm && exit 1
         echo ""
 
@@ -494,7 +561,7 @@ case $pAction in
 	cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
-        echo "You are going to rise docker-compose on [$pSite] with [$params] params"
+        echo "You are going to DOWN docker-compose on [$pSite] with [$params] params"
         confirm && exit 1
         echo ""
 
@@ -506,7 +573,7 @@ case $pAction in
 	cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
-        $0 backup ${Journal} all
+        # dojo backup ${Journal} all
         docker-compose -f $sitePath/$pSite/docker-compose.yml stop
     ;;
 

@@ -17,20 +17,11 @@ services:
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
     volumes:
-      - ./db:/var/lib/mysql                       # Stored db data outside docker is recommended.
-      # - ./db/init:/docker-entrypoint-initdb.d        # Place init .sql file(s) here.
-
-#  adminer:
-#    image: adminer
-#    ports:
-#      - 9001:8080
-#    links:
-#      - db:db
-#    depends_on:
-#      - db
+      - ./db:/var/lib/mysql                                          # Stored db data outside docker is recommended.
+      # - ./db/init:/docker-entrypoint-initdb.d                      # Place init .sql file(s) here.
 
   ojs:
-    image: marcbria/docker-pkp-ojs:ojs-stable-3_1_0
+    image: marcbria/docker-pkp-ojs:ojs-stable-3_1_0-1
     env_file: 
       - .env
     container_name: ${COMPOSE_PROJECT_NAME}_ojs
@@ -42,12 +33,13 @@ services:
     links:
       - db:db
     volumes:
-      - ./files/private:/var/www/files                 # Stored files outside docker is recommended.
-      - ./plugins:/var/www/html/plugins                # Store plugins outside docker to let you modify or add new ones.
-      - ./files/logs:/var/log/apache2                  # Stored files outside docker is recommended.
+      - ./files/private:/var/www/files                               # Stored files outside docker is recommended.
+      - ./files/public:/var/www/html/public                          # Stored files outside docker is recommended.
+      - ./files/logs:/var/log/apache2                                # Stored files outside docker is recommended.
       - ./config/apache.htaccess:/var/www/html/.htaccess
       - ./config/ojs.config.inc.php:/var/www/html/config.inc.php
       - ./config/php.custom.ini:/usr/local/etc/php/conf.d/custom.ini
+#     - ./plugins/staticPages:/var/www/html/plugins/generic/staticPages  # Store plugins outside docker to let you modify or add new ones.
     extra_hosts:
       - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}:127.0.0.1"
       # - "revistes.uab.test:158.109.174.224"
@@ -55,5 +47,14 @@ services:
       - 'traefik.backend=${COMPOSE_PROJECT_NAME}_ojs'
       - 'traefik.port=${OJS_PORT}'
       - 'traefik.frontend.rule=Host:ada.uab.cat'
+    depends_on:
+      - db
+
+  adminer:
+    image: adminer
+    ports:
+      - "${ADMINER_PORT:-9001}:8080"
+    links:
+      - db:db
     depends_on:
       - db
