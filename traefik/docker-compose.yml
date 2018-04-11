@@ -1,11 +1,21 @@
-version: '2'
+version: '3.3'
+
+networks:
+  outside:
+    external: true
+#    name: outside
+  inside:
+    external: false
+#    name: inside
+#    driver: bridge
 
 services:
-  proxy:
+  traefik:
     image: traefik
-    command: --web --docker --docker.domain=docker.localhost --logLevel=DEBUG
+#    command: --web --docker --docker.domain=docker.localhost --logLevel=DEBUG
     networks:
-      - webgateway
+      - inside
+      - outside
     ports:
 #      - "80:80"
       - "81:80"
@@ -13,9 +23,11 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-#      - /dev/null:/traefik.toml
-      - /traefik.toml:/traefik.toml
-
-networks:
-  webgateway:
-    driver: bridge
+      - $PWD/traefik.toml:/traefik.toml
+      - $PWD/acme.json:/acme.json
+#      - $PWD/traefik.log:/traefik.log
+    labels:
+      - traefik.backend=traefik
+      - traefik.frontend.rule=Host:ada.uab.es
+      - traefik.enable=true
+    restart: always

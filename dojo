@@ -364,7 +364,9 @@ case $pAction in
 	    chown dojo:docker $sitePath/$pSite -R && \
 	    chmod 777 $sitePath/$pSite/files -R && \
 	    chmod 777 $sitePath/$pSite/config -R && \
-            sed -i -e "s!OJS_PORT=NOTSET!OJS_PORT=${params}!g" "$sitePath/$pSite/.env" && \
+            sed -i -e "s!OJS_HTTP=NOTSET!OJS_HTTP=${params}!g" "$sitePath/$pSite/.env" && \
+            sed -i -e "s!OJS_HTTPS=NOTSET!OJS_HTTPS=$((${params} + 400))!g" "$sitePath/$pSite/.env" && \
+            sed -i -e "s!ADMINER_HTTP=NOTSET!ADMINER_HTTP=$((${params} + 1000))!g" "$sitePath/$pSite/.env" && \
             sed -i -e "s!COMPOSE_PROJECT_NAME=NOTSET!COMPOSE_PROJECT_NAME=${pSite}!g" "$sitePath/$pSite/.env" && \
             sed -i -e "s!PROJECT_DOMAIN=NOTSET.ojs.localhost!PROJECT_DOMAIN=${pSite}.ojs.localhost!g" "$sitePath/$pSite/.env" && \
             exit 0

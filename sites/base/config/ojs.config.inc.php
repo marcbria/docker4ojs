@@ -123,11 +123,11 @@ enable_beacon =
 
 [database]
 
-driver = mysqli
+driver = mysql
 host = db
 username = ojs
 password = ojs
-name = ojs_db
+name = ojs
 
 ; Enable persistent connections
 persistent = Off

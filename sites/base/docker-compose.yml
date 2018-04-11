@@ -7,11 +7,14 @@
 
 version: "3.3"
 
+networks:
+  inside:
+    external: false
+
 services:
 
   db:
     image: mysql
-    restart: always
     env_file: 
       - .env
     container_name: ${COMPOSE_PROJECT_NAME}_db
@@ -20,10 +23,10 @@ services:
     volumes:
       - ./db:/var/lib/mysql                                          # Stored db data outside docker is recommended.
       # - ./db/init:/docker-entrypoint-initdb.d                      # Place init .sql file(s) here.
+    restart: always
 
   ojs:
-    image: lucasdiedrich/ojs:3.1.0-1
-    restart: always
+    image: marcbria/docker-pkp-ojs:3.1.1
     env_file: 
       - .env
     environment:
@@ -31,7 +34,7 @@ services:
       OJS_CLI_INSTALL: 1
       OJS_DB_HOST: 'db'
     container_name: ${COMPOSE_PROJECT_NAME}_ojs
-    hostname: ${COMPOSE_PROJECT_NAME}
+#    hostname: ${COMPOSE_PROJECT_NAME}
     healthcheck:
       test: "exit 0"
     ports:
@@ -45,25 +48,29 @@ services:
       - "/etc/localtime:/etc/localtime"
 #      - "/volumes/ojs/config.inc.php:/var/www/html/config.inc.php"
 
+#     From marc:
       - ./files/private:/var/www/html/files
       - ./files/public:/var/www/html/public                          # Stored files outside docker is recommended.
       - ./files/logs:/var/log/apache2                                # Stored files outside docker is recommended.
 #      - ./config/apache.htaccess:/var/www/html/.htaccess
       - ./config/ojs.config.inc.php:/var/www/html/config.inc.php
 #      - ./config/php.custom.ini:/usr/local/etc/php/conf.d/custom.ini
-    extra_hosts:
-      - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}:127.0.0.1"
-#    labels:
-#      - 'traefik.backend=${COMPOSE_PROJECT_NAME}_ojs'
-#      - 'traefik.port=${OJS_HTTP}'
-#      - 'traefik.frontend.rule=Host:ada.uab.cat'
+#     extra_hosts:
+#       - "${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}:127.0.0.1"
+   labels:
+     - 'traefik.backend=${COMPOSE_PROJECT_NAME}_ojs'
+     - 'traefik.port=${OJS_HTTP}'
+     - 'traefik.frontend.rule=Host:${COMPOSE_PROJECT_NAME}.ada.uab.cat'
+    networks:
+      - inside
     depends_on:
       - db
+    restart: always
 
   adminer:
     image: adminer
     ports:
-      - 9004:8080
+      - ${ADMINER_HTTP}:8080
     links:
       - db:db
     depends_on:
