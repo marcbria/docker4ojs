@@ -152,6 +152,7 @@ getParams() {
 	# Two arguments (max 3)
         up|u|\
         create|c|\
+        shell|s|\
         backup|b|\
         restore|\
         restart|\
@@ -262,6 +263,7 @@ cat <<-EOF
 	      env (e):            Shows the environment vars of the specified <site>.
 	      create (c):         Create a <site> based on model.
 	         |_ port-number:  A free external port for the dock.
+	      shell (s):          Starts a shell in the specified container.
 	      up:                 Rises the specified <site>.
 	         |_ dock-params:  "-d" if you want a detached dock (optional).
 	      stop:               Stops the specified <site>.
@@ -288,6 +290,7 @@ cat <<-EOF
 	Some examples: 
 	      $ dojo list
 	      $ dojo create myJournal 8081
+	      $ dojo shell myJournal
 	      $ dojo up myJournal -d
 	      $ dojo stop myJournal
 	      $ dojo down myJournal
@@ -364,6 +367,7 @@ case $pAction in
 	    chown dojo:docker $sitePath/$pSite -R && \
 	    chmod 777 $sitePath/$pSite/files -R && \
 	    chmod 777 $sitePath/$pSite/config -R && \
+	    chown 101:docker $sitePath/$pSite/db -R && \
             sed -i -e "s!OJS_HTTP=NOTSET!OJS_HTTP=${params}!g" "$sitePath/$pSite/.env" && \
             sed -i -e "s!OJS_HTTPS=NOTSET!OJS_HTTPS=$((${params} + 400))!g" "$sitePath/$pSite/.env" && \
             sed -i -e "s!ADMINER_HTTP=NOTSET!ADMINER_HTTP=$((${params} + 1000))!g" "$sitePath/$pSite/.env" && \
@@ -378,6 +382,10 @@ case $pAction in
             echo "Remove $sitePath/$pSite if you want to start again."
             exit 1
         fi
+    ;;
+
+    shell|s)
+        docker exec -it ${pSite}_ojs sh
     ;;
 
     env|e)
@@ -447,7 +455,7 @@ case $pAction in
 
         # ojsDBdefault=ojs_${COMPOSE_PROJECT_NAME}
         # ojsDB=${MYSQL_DATABASE:-$ojsDBdefault}
-        ojsDB=${MYSQL_DATABASE:-ojs_db}
+        ojsDB=${MYSQL_DATABASE:-ojs}
 
         case "$params" in
             db)
@@ -511,7 +519,8 @@ case $pAction in
 	cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
-        echo "--> php tools/upgrade.php ${params}"
+        echo "      |--> docker exec ${COMPOSE_PROJECT_NAME}_ojs"
+        echo "      |      php tools/upgrade.php ${params}"
         docker exec ${COMPOSE_PROJECT_NAME}_ojs \
         php tools/upgrade.php ${params}
     ;;

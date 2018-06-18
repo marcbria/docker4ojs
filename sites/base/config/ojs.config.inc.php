@@ -29,7 +29,7 @@
 installed = Off
 
 ; The canonical URL to the OJS installation (excluding the trailing slash)
-base_url = "http://0.0.0.0:8080"
+base_url = "http://0.0.0.0:80"
 
 ; Session cookie name
 session_cookie_name = OJSSID

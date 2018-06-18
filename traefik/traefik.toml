@@ -1,7 +1,7 @@
 # debug = true
 # logLevel = "DEBUG"
-# defaultEntryPoints = ["http", "https"]
-defaultEntryPoints = ["81", "https"]
+defaultEntryPoints = ["http", "https"]
+# defaultEntryPoints = ["80", "https"]
 
 ################################################################
 # Web configuration backend
