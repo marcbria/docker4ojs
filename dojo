@@ -414,6 +414,8 @@ case $pAction in
     ;;
 
     backup|b)
+	timeStart=`date +%s`
+
         checkFile $sitePath/$pSite/.env
 	cd $sitePath/$pSite
         source $sitePath/$pSite/.env
@@ -446,6 +448,9 @@ case $pAction in
                 ln -s -f ./files-${pSite}-${NOW}.tgz ./backup/lastBackupFiles
 
         esac
+        timeEnd=`date +%s`
+        timeRun=$((timeEnd-timeStart))
+	echo "Excecution time: $timeRun seconds"
     ;;
 
     restore)
