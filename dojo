@@ -436,16 +436,20 @@ case $pAction in
             ;;
 
             all)
+                # Files:
+		echo ""
+                echo "BACKUP FILES:"
+                tar cvzf ./backup/files-${pSite}-${NOW}.tgz ./files
+                ln -s -f ./files-${pSite}-${NOW}.tgz ./backup/lastBackupFiles
+
                 # Database:
+		echo "BACKUP DATABASES:"
                 docker exec ${pSite}_db /usr/bin/mysqldump -u root --password=$MYSQL_ROOT_PASSWORD \
+                       --all-databases --add-drop-database --events --routines --triggers \
                        ojs_${COMPOSE_PROJECT_NAME} > ./backup/db-${pSite}-${NOW}.sql
                 tar cvzf ./backup/db-${pSite}-${NOW}.tgz ./backup/db-${pSite}-${NOW}.sql
                 rm -f db-${pSite}-${NOW}.sql
                 ln -s -f ./db-${pSite}-${NOW}.tgz ./backup/lastBackupDb
-
-                # Files:
-                tar cvzf ./backup/files-${pSite}-${NOW}.tgz ./files
-                ln -s -f ./files-${pSite}-${NOW}.tgz ./backup/lastBackupFiles
 
         esac
         timeEnd=`date +%s`

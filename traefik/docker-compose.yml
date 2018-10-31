@@ -19,7 +19,7 @@ services:
     ports:
 #      - "80:80"
       - "81:80"
-      - "443:80"
+      - "444:443"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -28,6 +28,6 @@ services:
 #      - $PWD/traefik.log:/traefik.log
     labels:
       - traefik.backend=traefik
-      - traefik.frontend.rule=Host:ada.uab.es
+      - traefik.frontend.rule=Host:ada.uab.cat
       - traefik.enable=true
     restart: always

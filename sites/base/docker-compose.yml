@@ -28,7 +28,7 @@ services:
     restart: always
 
   ojs:
-    image: marcbria/docker-pkp-ojs:3.1.1-2
+    image: marcbria/docker-pkp-ojs:3.1.1-2                           # Updated manualy to the last stable release.
     env_file: 
       - .env
     environment:
