@@ -1,25 +1,20 @@
 version: '3.3'
 
 networks:
-  outside:
-    external: true
-#    name: outside
+  traefik:
+    external:
+      name: traefik
   inside:
     external: false
-#    name: inside
-#    driver: bridge
 
 services:
   traefik:
     image: traefik
-#    command: --web --docker --docker.domain=docker.localhost --logLevel=DEBUG
     networks:
       - inside
-      - outside
+      - traefik 
     ports:
-#      - "80:80"
       - "81:80"
-      - "444:443"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -28,6 +23,6 @@ services:
 #      - $PWD/traefik.log:/traefik.log
     labels:
       - traefik.backend=traefik
-      - traefik.frontend.rule=Host:ada.uab.cat
+      - traefik.frontend.rule=Host:precarietat.net
       - traefik.enable=true
     restart: always

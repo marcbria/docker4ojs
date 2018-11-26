@@ -1,15 +1,14 @@
-# debug = true
-# logLevel = "DEBUG"
 logLevel = "INFO"
-#defaultEntryPoints = ["http"]
-defaultEntryPoints = ["80","81"]
+# logLevel = "DEBUG"
+# defaultEntryPoints = ["http", "https", "9000", "81", "444"]
+defaultEntryPoints = ["http", "https"]
 
 ################################################################
 # Docker configuration backend
 ################################################################
 # Connection to docker host system (docker.sock)
 [docker]
-  domain = "ada.uab.cat"
+  domain = "precarietat.net"
   watch = true
 
 # WEB interface of Traefik - it will show web page with overview
@@ -24,4 +23,4 @@ defaultEntryPoints = ["80","81"]
 
 [entryPoints]
   [entryPoints.http]
-  address = ":81"
+  address = ":80"
