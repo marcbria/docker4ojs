@@ -1,6 +1,5 @@
 # File: docker-compose.yml
 # Access via "http://localhost:8081"
-#   (or "http://$(docker-machine ip):8081" if using docker-machine)
 #
 # Call example:
 # $ docker-compose up
@@ -10,6 +9,9 @@ version: "3.3"
 networks:
   inside:
     external: false
+  traefik:
+    external:
+      name: traefik
 
 services:
 
@@ -32,7 +34,7 @@ services:
     env_file: 
       - .env
     environment:
-      SERVERNAME: ${COMPOSE_PROJECT_NAME}.${PROJECT_DOMAIN}
+      SERVERNAME: ${PROJECT_DOMAIN}
       OJS_CLI_INSTALL: 1
       OJS_DB_HOST: 'db'
     container_name: ${COMPOSE_PROJECT_NAME}_ojs
@@ -53,11 +55,13 @@ services:
       - ./config/php.custom.ini:/etc/php5/conf.d/custom.ini
     labels:
       - "traefik.backend=${COMPOSE_PROJECT_NAME}_ojs"
-      - "traefik.port=${OJS_HTTP}"
-      - "traefik.frontend.rule=Host:${COMPOSE_PROJECT_NAME}.ada.uab.cat"
+      - "traefik.frontend.rule=Host:${PROJECT_DOMAIN}"
+      - "traefik.docker.network=traefik"
+      - "traefik.port=80"
       - traefik.enable=true
     networks:
       - inside
+      - traefik
     depends_on:
       - db
     restart: always
