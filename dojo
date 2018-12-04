@@ -335,7 +335,8 @@ case $pAction in
 	# docker ps --all | column -ts $'\t'
 	# echo "======================================="
 	# docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk 'BEGIN{FS="\t"}{ print $5 "\t" $6 "\t" $7 }' | column -ts $'\t'
-	docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk '{ print $12 "\t" $7 "\t" $8" "$9" "$10 "\t" $11 }' | column -ts $'\t'
+	# docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk '{ print $12 "\t" $7 "\t" $8" "$9" "$10 "\t" $11 }' | column -ts $'\t'
+	docker ps --all --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.ID}}" | grep "CONTAINER\|${params:-ojs}"
         exit 0
     ;;
 
