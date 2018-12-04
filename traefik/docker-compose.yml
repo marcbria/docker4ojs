@@ -10,12 +10,16 @@ networks:
 services:
   traefik:
     image: traefik
+    env_file:
+      - .env
     networks:
       - inside
       - traefik 
+    container_name: ${COMPOSE_PROJECT_NAME}
     ports:
-      - "81:80"
-      - "8080:8080"
+      - "${FRONTEND_HTTP_PORT}:80"
+      - "${FRONTEND_HTTPS_PORT}:443"
+      - "${WEB_UI_PORT}:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - $PWD/traefik.toml:/traefik.toml
@@ -23,6 +27,6 @@ services:
 #      - $PWD/traefik.log:/traefik.log
     labels:
       - traefik.backend=traefik
-      - traefik.frontend.rule=Host:precarietat.net
+      - traefik.frontend.rule=Host:${FRONTEND_DOMAIN}
       - traefik.enable=true
     restart: always
