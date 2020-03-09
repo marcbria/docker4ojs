@@ -9,7 +9,7 @@ networks:
 
 services:
   traefik:
-    image: traefik
+    image: traefik:v1.7
     env_file:
       - .env
     networks:
@@ -19,7 +19,7 @@ services:
     ports:
       - "${FRONTEND_HTTP_PORT}:80"
       - "${FRONTEND_HTTPS_PORT}:443"
-      - "${WEB_UI_PORT}:8080"
+      - "${ADMIN_HTTP_PORT}:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - $PWD/traefik.toml:/traefik.toml

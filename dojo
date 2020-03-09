@@ -136,8 +136,7 @@ getParams() {
         list|l|\
         stop|\
         down|\
-        remove|\
-	env|e)
+        remove)
             if [ $# -gt 2 ]; then
                 echo "Too much arguments..."
                 echo "Try with: dojo help"
@@ -157,7 +156,8 @@ getParams() {
         restore|\
         restart|\
         mojo|m|\
-        upgrade)
+        upgrade|\
+	env|e)
             if [ $# -lt 2 ]; then
                 echo "Missing arguments..."
                 echo "Try with: dojo help"
@@ -391,11 +391,19 @@ case $pAction in
     ;;
 
     env|e)
-        # ENV variables are required:
-        checkFile $sitePath/$pSite/.env && echo "ENV file not found."
-        echo "Compose config variables for journal [$pSite]:"
-        cat $sitePath/$pSite/.env
-        # source $sitePath/$pSite/.env
+        if [[ ${pSite} -eq "all" ]]; then
+            # seeks the param in each .env file
+            cd ${sitePath}
+            echo "Example: $ dojo env all \"HTTP_PORT\\|OJS_HTTP\""
+            cat */.env | grep "$params"
+            cd ${BACKCD}
+	else
+            # ENV variables are required:
+            checkFile $sitePath/$pSite/.env && echo "ENV file not found."
+            echo "Compose config variables for journal [$pSite]:"
+            cat $sitePath/$pSite/.env
+            # source $sitePath/$pSite/.env
+	fi
     ;;
 
     remove)

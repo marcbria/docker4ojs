@@ -1,18 +1,15 @@
+# Manual: https://docs.traefik.io/configuration/commons/
+# https://pad.cgtinformatica.org/BRRyUhagR9CQF82g8tTbLQ?both
+
 logLevel = "INFO"
 # logLevel = "DEBUG"
-# defaultEntryPoints = ["http", "https", "9000", "81", "444"]
-defaultEntryPoints = ["http", "https"]
+defaultEntryPoints = ["https", "http"]
 
 ################################################################
-# Docker configuration backend
-################################################################
-# Connection to docker host system (docker.sock)
-[docker]
-  domain = "precarietat.net"
-  watch = true
-
 # WEB interface of Traefik - it will show web page with overview
 # of frontend and backend configurations
+################################################################
+
 [web]
   address = ":8080"
   [web.auth.basic]
@@ -21,6 +18,84 @@ defaultEntryPoints = ["http", "https"]
   [web.statistics]
     RecentErrors = 10
 
+
+################################################################
+# Frontend: EntryPoints
+################################################################
+
 [entryPoints]
   [entryPoints.http]
   address = ":80"
+#  address = ":81"
+# Comentar estas 2 lineas para dasactivar la redirec. forzada a HTTPS.
+#    [entryPoints.http.redirect]
+#    entryPoint = "https"
+  [entryPoints.https]
+  address = ":443"
+#  address = ":8443"
+  [entryPoints.https.tls]
+#    [[entryPoints.https.tls.certificates]]
+#    certFile = "/root/cert/revistes_uab_cat_3225480/revistes_uab_cat.crt"
+#    keyFile = "/root/cert/revistes/keys/revistes_uab_cat.key"
+
+
+################################################################
+# Enable retry sending request if network error
+################################################################
+[retry]
+
+# Number of attempts
+# Optional
+# Default: (number servers in backend) -1
+#
+# attempts = 3
+
+
+################################################################
+# Docker configuration backend
+# Connection to docker host system (docker.sock)
+################################################################
+
+[docker]
+  endpoint = "unix:///var/run/docker.sock"
+  domain = "precarietat.net"
+  watch = true
+  exposedByDefault = false
+
+
+################################################################
+# Certificates
+################################################################
+
+[acme]
+  email = "marc.bria@uab.cat"
+  storage = "acme.json"
+  onHostRule = true
+
+  acmeLogging=true
+
+# Servidor CA de pruebas: no tiene limites, aunque los
+# certificados daran error: "Fake LE Intermediate X1"
+  caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+# Servidor CA de producción
+#  caServer = "https://acme-v02.api.letsencrypt.org/directory"
+
+  entryPoint = "https"
+
+  [acme.httpChallenge]
+    entryPoint = "http"
+
+# Wildcard certificates:
+# [[acme.domains]]
+#   main = "precarietat.net"
+#   sans = "brumal.precarietat.net", "athenea.precarietat.net"
+
+# [[acme.domains]]
+#   main = "brumal.precarietat.net"
+
+# [[acme.domains]]
+#   main = "grafica.precarietat.net"
+
+# [[acme.domains]]
+#  main = "athenea.precarietat.net"
+
