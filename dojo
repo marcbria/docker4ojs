@@ -152,6 +152,7 @@ getParams() {
         up|u|\
         create|c|\
         shell|s|\
+        clone|cl|\
         backup|b|\
         restore|\
         restart|\
@@ -279,6 +280,7 @@ cat <<-EOF
 	      upgrade:            Runs upgrade.php script in the specified <site>.
 	         |_ check:        Check's versions.
 	         |_ update:       Performs the site update.
+        clone:              Clone site <origin> to <destination> with <params>.
 	      remove:             Removes <site>'s dock and images (keeping volumes).
 	      restart:            Stops and Ups a <site> (keeping volumes).
 	      var (v):            Get or shows a variable.
@@ -297,6 +299,7 @@ cat <<-EOF
 	      $ dojo restart myJournal -d
 	      $ dojo backup myJournal db
 	      $ dojo restore myJournal files
+	      $ dojo clone myJournal newJournal 8081
 	      $ dojo upgrade myJournal check
 	      $ dojo com-ps myJournal
 	      $ dojo portainer
@@ -312,6 +315,37 @@ checkFile () {
         exit 1
     fi
 }
+
+### checkFolder(fullPath, true)
+# Passes with folder existence or inexistence and get error when not exists or exists.
+# $1 is the path of the folder to check.
+# $2 is the kind of check (true: existence, false: inexistence).
+checkFolder() {
+
+    if [ ${1} ]; then
+        if [ ${2:-true} ]   # Check if EXISTS
+            if [[ ! -d "${1}" ]]; then
+                printf "========================= ERROR =========================\n"
+                printf "The path you specified DOES NOT EXIST.\n"
+                printf "Check folder [${1}] and try again.\n"
+                printf "=========================================================\n"
+                exit 2
+            fi
+        else
+            if [[ -d "${1}" ]]; then
+                printf "========================= ERROR =========================\n"
+                printf "The path you specified DOES EXIST.\n"
+                printf "Check folder [${1}] and try again.\n"
+                printf "=========================================================\n"
+                exit 3
+            fi
+        fi
+    else
+        printf "You need to specify the folder you like to check.\n"
+        exit 1
+    fi
+}
+
 
 
 ###############################################################################
@@ -331,18 +365,18 @@ case $pAction in
     ;;
 
     list|l)
-	echo $params
-	# docker ps --all | column -ts $'\t'
-	# echo "======================================="
-	# docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk 'BEGIN{FS="\t"}{ print $5 "\t" $6 "\t" $7 }' | column -ts $'\t'
-	# docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk '{ print $12 "\t" $7 "\t" $8" "$9" "$10 "\t" $11 }' | column -ts $'\t'
-	docker ps --all --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.ID}}" | grep "CONTAINER\|${params:-ojs}"
+        echo $params
+        # docker ps --all | column -ts $'\t'
+        # echo "======================================="
+        # docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk 'BEGIN{FS="\t"}{ print $5 "\t" $6 "\t" $7 }' | column -ts $'\t'
+        # docker ps --all | grep "CONTAINER\|${params:-ojs}" | awk '{ print $12 "\t" $7 "\t" $8" "$9" "$10 "\t" $11 }' | column -ts $'\t'
+        docker ps --all --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.ID}}" | grep "CONTAINER\|${params:-ojs}"
         exit 0
     ;;
 
     portainer)
         docker run -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer 
-	# --templates http://tools.linuxserver.io/portainer.json
+               # --templates http://tools.linuxserver.io/portainer.json
         exit 0
     ;;
 
@@ -366,10 +400,10 @@ case $pAction in
             mkdir -p $sitePath/$pSite/files/public && \
             mkdir -p $sitePath/$pSite/files/private && \
             mkdir -p $sitePath/$pSite/files/logs && \
-	    chown dojo:docker $sitePath/$pSite -R && \
-	    chmod 777 $sitePath/$pSite/files -R && \
-	    chmod 777 $sitePath/$pSite/config -R && \
-	    chown 101:docker $sitePath/$pSite/db -R && \
+            chown dojo:docker $sitePath/$pSite -R && \
+            chmod 777 $sitePath/$pSite/files -R && \
+            chmod 777 $sitePath/$pSite/config -R && \
+            chown 101:docker $sitePath/$pSite/db -R && \
             sed -i -e "s!OJS_HTTP=NOTSET!OJS_HTTP=${params}!g" "$sitePath/$pSite/.env" && \
             sed -i -e "s!OJS_HTTPS=NOTSET!OJS_HTTPS=$((${params} + 400))!g" "$sitePath/$pSite/.env" && \
             sed -i -e "s!ADMINER_HTTP=NOTSET!ADMINER_HTTP=$((${params} + 1000))!g" "$sitePath/$pSite/.env" && \
@@ -397,13 +431,13 @@ case $pAction in
             echo "Example: $ dojo env all \"HTTP_PORT\\|OJS_HTTP\""
             cat */.env | grep "$params"
             cd ${BACKCD}
-	else
+        else
             # ENV variables are required:
             checkFile $sitePath/$pSite/.env && echo "ENV file not found."
             echo "Compose config variables for journal [$pSite]:"
             cat $sitePath/$pSite/.env
             # source $sitePath/$pSite/.env
-	fi
+        fi
     ;;
 
     remove)
@@ -420,14 +454,14 @@ case $pAction in
         cd $sitePath/$pSite
         source $sitePath/$pSite/.env
         dojo stop ${pSite}
-	dojo up ${pSite} ${params}
+        dojo up ${pSite} ${params}
     ;;
 
     backup|b)
-	timeStart=`date +%s`
+        timeStart=`date +%s`
 
         checkFile $sitePath/$pSite/.env
-	cd $sitePath/$pSite
+        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
         case "$params" in
@@ -441,19 +475,20 @@ case $pAction in
             ;;
 
             files)
+echo 2
                 tar cvzf ./backup/files-${pSite}-${NOW}.tgz ./files
                 ln -s -f ./files-${pSite}-${NOW}.tgz ./backup/lastBackupFiles
             ;;
 
             all)
                 # Files:
-		echo ""
+echo "all"
                 echo "BACKUP FILES:"
                 tar cvzf ./backup/files-${pSite}-${NOW}.tgz ./files
                 ln -s -f ./files-${pSite}-${NOW}.tgz ./backup/lastBackupFiles
 
                 # Database:
-		echo "BACKUP DATABASES:"
+echo "BACKUP DATABASES:"
                 docker exec ${pSite}_db /usr/bin/mysqldump -u root --password=$MYSQL_ROOT_PASSWORD \
                        --all-databases --add-drop-database --events --routines --triggers \
                        ojs_${COMPOSE_PROJECT_NAME} > ./backup/db-${pSite}-${NOW}.sql
@@ -464,12 +499,12 @@ case $pAction in
         esac
         timeEnd=`date +%s`
         timeRun=$((timeEnd-timeStart))
-	echo "Excecution time: $timeRun seconds"
+        echo "Excecution time: $timeRun seconds"
     ;;
 
     restore)
         checkFile $sitePath/$pSite/.env 
-	cd $sitePath/$pSite
+        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
         # ojsDBdefault=ojs_${COMPOSE_PROJECT_NAME}
@@ -478,69 +513,84 @@ case $pAction in
 
         case "$params" in
             db)
-	        echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
-	        echo "DROP DATABASE IF EXISTS ${ojsDB};" \
-	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
-	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
-			2>&1 | grep -v "Using a password on the command line interface can be insecure"
-
-	        echo "--> CREATE DATABASE ${ojsDB};"
-	        echo "CREATE DATABASE ${ojsDB};" \
-	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
-	                -u root --password=$MYSQL_ROOT_PASSWORD \
-			2>&1 | grep -v "Using a password on the command line interface can be insecure"
-
-	        echo "--> USE ${ojsDB};"
-	        echo "USE ${ojsDB};" \
-	                | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
-	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
-			2>&1 | grep -v "Using a password on the command line interface can be insecure"
-
-	        echo "DB ${ojsDB} was created"
-
-	        echo "Restoring DB:"
-
-	        tar -xzf ./backup/lastBackupDb --to-stdout \
-                	| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql --binary-mode \
-	                -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
-			2>&1 | grep -v "Using a password on the command line interface can be insecure"
-
-	        echo "---> DATA RESTORED in ojs_${COMPOSE_PROJECT_NAME} from backup/lastBackupDb."
-
-                #       An alternative:
-                #       echo "Running over ${ojsDB}:"
-                #       echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
-                #       echo "--> CREATE DATABASE ${ojsDB};"
-                #       echo "--> USE ${ojsDB};"
-                #
-                #       echo "DROP DATABASE IF EXISTS ${ojsDB};
-                #       CREATE DATABASE ${ojsDB};
-                #               USE ${ojsDB};" \
-                #               | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
-                #               -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
-	    ;;
+                echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
+                echo "DROP DATABASE IF EXISTS ${ojsDB};" \
+                        | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+                        -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
+                        2>&1 | grep -v "Using a password on the command line interface can be insecure"
+      
+      	        echo "--> CREATE DATABASE ${ojsDB};"
+      	        echo "CREATE DATABASE ${ojsDB};" \
+                        | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+                        -u root --password=$MYSQL_ROOT_PASSWORD \
+                        2>&1 | grep -v "Using a password on the command line interface can be insecure"
+      
+      	        echo "--> USE ${ojsDB};"
+      	        echo "USE ${ojsDB};" \
+                        | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+                        -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
+                        2>&1 | grep -v "Using a password on the command line interface can be insecure"
+      
+      	        echo "DB ${ojsDB} was created"
+      
+      	        echo "Restoring DB:"
+      
+      	        tar -xzf ./backup/lastBackupDb --to-stdout \
+                       	| docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql --binary-mode \
+                        -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB} \
+                        2>&1 | grep -v "Using a password on the command line interface can be insecure"
+      
+      	        echo "---> DATA RESTORED in ojs_${COMPOSE_PROJECT_NAME} from backup/lastBackupDb."
+      
+                      #       An alternative:
+                      #       echo "Running over ${ojsDB}:"
+                      #       echo "--> DROP DATABASE IF EXISTS ${ojsDB};"
+                      #       echo "--> CREATE DATABASE ${ojsDB};"
+                      #       echo "--> USE ${ojsDB};"
+                      #
+                      #       echo "DROP DATABASE IF EXISTS ${ojsDB};
+                      #       CREATE DATABASE ${ojsDB};
+                      #               USE ${ojsDB};" \
+                      #               | docker exec -i ${COMPOSE_PROJECT_NAME}_db /usr/bin/mysql \
+                      #               -u root --password=$MYSQL_ROOT_PASSWORD ${ojsDB}
+            ;;
 
             files)
-		mv ./files ./files-${NOW}
-		tar xvzf ./backup/lastBackupFiles .
+echo 1
+              mv ./files ./files-${NOW}
+              tar xvzf ./backup/lastBackupFiles .
             ;;
 
 	    all)
-		dojo restore $pSite db
-		dojo restore $sSite files
+          dojo restore $pSite db
+          dojo restore $sSite files
 
-	esac
+    esac
+    ;;
+
+    clone)
+        checkFile $sitePath/$pSite/.env
+        cd $sitePath/$pSite
+        source $sitePath/$pSite/.env
+
+        checkFolder $sitePath true
+        checkFolder 
+
+        echo "      |--> docker exec ${COMPOSE_PROJECT_NAME}_ojs"
+        echo "      |      php tools/upgrade.php ${params}"
+        docker exec ojs_app_${COMPOSE_PROJECT_NAME} \
+        php tools/upgrade.php ${params}
     ;;
 
 
     upgrade)
         checkFile $sitePath/$pSite/.env
-	cd $sitePath/$pSite
+        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
-        echo "      |--> docker exec ${COMPOSE_PROJECT_NAME}_ojs"
+        echo "      |--> docker exec ojs_app_${COMPOSE_PROJECT_NAME}"
         echo "      |      php tools/upgrade.php ${params}"
-        docker exec ${COMPOSE_PROJECT_NAME}_ojs \
+        docker exec ojs_app_${COMPOSE_PROJECT_NAME} \
         php tools/upgrade.php ${params}
     ;;
 
@@ -548,25 +598,25 @@ case $pAction in
         # Syntax:  dojo var <journalTag> <subaction> <context> <varName> <varValue>
         # Example: dojo var athenea set ojs installed Off
         checkFile $sitePath/$pSite/.env
-	cd $sitePath/$pSite
+        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
-	if [[ ${params[1]} -eq "ojs" ]]; then
-	        case ${params[0]} in
-			get)
-				cat ${sitePath}/${pSite}/config/ojs.config.inc.php | grep ${params[2]} | grep "="
-			;;
-			set)
-				echo "Setting variable in config.inc.php for journal [$pSite] as: ${params[2]} = ${params[3]}"
-				sed -i -e "s/^${params[2]} =.*/${params[2]} = ${params[3]}/" ${sitePath}/${pSite}/config/ojs.config.inc.php
-			;;
-		esac
-	fi
+        if [[ ${params[1]} -eq "ojs" ]]; then
+            case ${params[0]} in
+                get)
+                    cat ${sitePath}/${pSite}/config/ojs.config.inc.php | grep ${params[2]} | grep "="
+                ;;
+                set)
+                    echo "Setting variable in config.inc.php for journal [$pSite] as: ${params[2]} = ${params[3]}"
+                    sed -i -e "s/^${params[2]} =.*/${params[2]} = ${params[3]}/" ${sitePath}/${pSite}/config/ojs.config.inc.php
+                ;;
+            esac
+        fi
     ;;
 
     mojo|m)
         checkFile $sitePath/$pSite/.env
-	cd $sitePath/$pSite
+        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
         # docker exec ${COMPOSE_PROJECT_NAME}_ojs bash -c "/usr/bin/mojo ${@:3}"
@@ -576,7 +626,7 @@ case $pAction in
 
     up|u)
         checkFile $sitePath/$pSite/.env
-	cd $sitePath/$pSite
+        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
         echo "You are going to RISE docker-compose on [$pSite] with [$params] params"
@@ -588,7 +638,7 @@ case $pAction in
 
     down)
         checkFile $sitePath/$pSite/.env
-	cd $sitePath/$pSite
+        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
         echo "You are going to DOWN docker-compose on [$pSite] with [$params] params"
@@ -600,7 +650,7 @@ case $pAction in
 
     stop)
         checkFile $sitePath/$pSite/.env
-	cd $sitePath/$pSite
+	      cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
         # dojo backup ${Journal} all
@@ -610,13 +660,13 @@ case $pAction in
     com-*)
         # Not all compose commands need an env:
 
-	if [[ $pSite ]]; then
-		checkFile $sitePath/$pSite/.env
-		cd $sitePath/$pSite
-        	source $sitePath/$pSite/.env
-	fi
+        if [[ $pSite ]]; then
+            checkFile $sitePath/$pSite/.env
+            cd $sitePath/$pSite
+            source $sitePath/$pSite/.env
+        fi
 
-	composeAction=(${pAction//-/ })
+        composeAction=(${pAction//-/ })
 
         # echo "You are going to run [${composeAction[1]}] with docker-compose on site [$pSite] with [${@:3}] params"
         echo "Running on site [$pSite]: $ docker-compose ${composeAction[1]} ${@:3}" 
@@ -627,15 +677,15 @@ case $pAction in
     ;;
 
     *)
-	# Arg validation won't let you arrive here. 
+        # Arg validation won't let you arrive here. 
         # Keeping this to test new features.
 
         checkFile $sitePath/$pSite/.env
-	cd $sitePath/$pSite
+        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
         echo "You are going to run docker-compose on [$pSite] with [$params] params"
-	confirm "Press "Y" if you want to continue... " && exit 1
+        confirm "Press "Y" if you want to continue... " && exit 1
 
         echo ""
         docker-compose -f $sitePath/$pSite/docker-compose.yml ${pAction} ${params}
