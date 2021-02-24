@@ -22,12 +22,13 @@
 #       COMPANY:  UAB - SdP - ReDi
 #       LICENSE:  GPL 3
 #       CREATED:  29/08/17 02:01:15 CEST
-#       UPDATED:  02/02/18 13:18:12 CEST
+#       UPDATED:  23/02/21 23:18:12 CEST
 #      REVISION:  1.06
 #===============================================================================
 
 # Script's Config vars:
 sitePath="/home/dojo/sites" 	# Where are the sites?
+siteVols="/srv/volumes" 	    # Where are the volumes?
 
 # Get script's full path and folder:
 dojoRun="`readlink -e $0`"
@@ -90,6 +91,7 @@ showParams() {
     echo "pSite:       $pSite"
     param=${params[*]}
     echo "params:      $param"
+    echo "pArgs:       $pArgs"
     echo "pBackupId:   $pBackupId"
     echo "pPreBackup:  $pPreBackup"
     echo "pCheckpoint: $pCheckpoint"
@@ -120,7 +122,7 @@ getParams() {
 
     case "${1}" in
 
-	# No arguments
+    # No arguments
         help|h|\
         portainer)
             if [ $# -gt 1 ]; then
@@ -132,7 +134,7 @@ getParams() {
             fi
         ;;
 
-	# One argument (max 2)
+    # One argument (max 2)
         list|l|\
         stop|\
         down|\
@@ -144,21 +146,20 @@ getParams() {
             else
                 pAction="${1}"
                 pSite="${2}"
-		params="${3}"
+                params="${3}"
             fi
         ;;
 
-	# Two arguments (max 3)
+    # Two arguments (max 3)
         up|u|\
         create|c|\
         shell|s|\
-        clone|cl|\
         backup|b|\
         restore|\
         restart|\
         mojo|m|\
         upgrade|\
-	env|e)
+        env|e)
             if [ $# -lt 2 ]; then
                 echo "Missing arguments..."
                 echo "Try with: dojo help"
@@ -175,11 +176,33 @@ getParams() {
             fi
         ;;
 
-	# Five arguments
+    # Four arguments
+        # Syntax example: dojo clone <journalTag> <journalTagNew> <portNum>
+        clone|cl)
+
+            if [ $# -lt 4 ]; then
+                echo "Missing arguments..."
+                echo "Try with: dojo help"
+                exit 0
+            fi
+            if [ $# -gt 4 ]; then
+                echo "Too much arguments..."
+                echo "Try with: dojo help"
+                exit 0
+            else
+                pAction="${1}"
+                pSite="${2}"
+                params="${3}"
+                pArgs="${4}"
+            fi
+        ;;
+
+
+    # Five arguments
         # Syntax example: dojo var <journalTag> <context> <varName> <varValue>
         var|v)
 
-	    # TODO!!!
+            # TODO!!!
             if [ $# -lt 5 ]; then
                 echo "Missing arguments..."
                 echo "Try with: dojo help"
@@ -280,7 +303,7 @@ cat <<-EOF
 	      upgrade:            Runs upgrade.php script in the specified <site>.
 	         |_ check:        Check's versions.
 	         |_ update:       Performs the site update.
-        clone:              Clone site <origin> to <destination> with <params>.
+        clone (cl):         Clone site <origin> to <destination> with <port>.
 	      remove:             Removes <site>'s dock and images (keeping volumes).
 	      restart:            Stops and Ups a <site> (keeping volumes).
 	      var (v):            Get or shows a variable.
@@ -322,8 +345,10 @@ checkFile () {
 # $2 is the kind of check (true: existence, false: inexistence).
 checkFolder() {
 
+    exist=${2:-true}
+
     if [ ${1} ]; then
-        if [ ${2:-true} ]   # Check if EXISTS
+        if [ $exist == true ]; then           # Check if EXISTS. Error if not.
             if [[ ! -d "${1}" ]]; then
                 printf "========================= ERROR =========================\n"
                 printf "The path you specified DOES NOT EXIST.\n"
@@ -331,7 +356,7 @@ checkFolder() {
                 printf "=========================================================\n"
                 exit 2
             fi
-        else
+        else                          # Check if NOT EXIST. Error if does.
             if [[ -d "${1}" ]]; then
                 printf "========================= ERROR =========================\n"
                 printf "The path you specified DOES EXIST.\n"
@@ -375,8 +400,11 @@ case $pAction in
     ;;
 
     portainer)
-        docker run -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer 
-               # --templates http://tools.linuxserver.io/portainer.json
+        # docker run -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer 
+        #       # --templates http://tools.linuxserver.io/portainer.json
+
+        docker volume create portainer_data
+        docker run -d -p 8084:8000 -p 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
         exit 0
     ;;
 
@@ -568,18 +596,59 @@ echo 1
     esac
     ;;
 
-    clone)
+    clone|cl)
+        checkFolder $sitePath/$pSite  true     # origin docker folder must exist to be cloned.
+        checkFolder $siteVols/$pSite  true     # origin volume folder must exist to be cloned.
+        checkFolder $sitePath/$params false    # destination docker folder must NOT exist to be cloned.
+        checkFolder $siteVols/$params false    # destination docker folder must NOT exist to be cloned.
+
         checkFile $sitePath/$pSite/.env
-        cd $sitePath/$pSite
         source $sitePath/$pSite/.env
 
-        checkFolder $sitePath true
-        checkFolder 
+        echo "  | Action: CLONE"
+        echo "  | "
+        echo "  | We are going to clone [$pSite] to [$params] on port [$pArgs]"
+        echo "  | Those folders are going to be created:"
+        echo "  |   - Site:   [$sitePath/$params]"
+        echo "  |   - Volume: [$siteVols/$params]"
+        echo "  | "
+        echo "  | WARNING: This action could be HARMFULL. Are you compleatly sure?"
+        confirm "  | Press "Y" if you want to continue... " && exit 1
 
-        echo "      |--> docker exec ${COMPOSE_PROJECT_NAME}_ojs"
-        echo "      |      php tools/upgrade.php ${params}"
-        docker exec ojs_app_${COMPOSE_PROJECT_NAME} \
-        php tools/upgrade.php ${params}
+        # Stop origin to copy DB properly:
+        dojo stop $pSite
+
+				# Clone dockersite folders:
+        rsync -ah --info=progress2 $sitePath/$pSite/ $sitePath/$params
+        rsync -ah --info=progress2 $siteVols/$pSite/ $siteVols/$params
+
+        # Rise origin again:
+        cd $sitePath/$pSite && docker-compose up -d
+
+        # Fix volumes in destination:
+        unlink $sitePath/$params/volumes && ln -s $siteVols/$params $sitePath/$params/volumes
+
+        # Fix env file:
+        sed -i -e "s/HTTP_PORT=..../HTTP_PORT=${pArgs}/g" "$sitePath/$params/.env"
+        sed -i -e "s/HTTPS_PORT=..../HTTPS_PORT=$((${pArgs} + 500))/g" "$sitePath/$params/.env"
+        sed -i -e "s/ADMINER_HTTP=..../ADMINER_HTTP=$((${pArgs} + 1000))/g" "$sitePath/$params/.env"
+        sed -i -e "s/COMPOSE_PROJECT_NAME=${pSite}/COMPOSE_PROJECT_NAME=${params}/g" "$sitePath/$params/.env"
+        sed -i -e "s/PROJECT_DOMAIN=${pSite}.localhost/PROJECT_DOMAIN=${params}.localhost/g" "$sitePath/$params/.env"
+
+        # Fix ojs.config:
+        sed -i -e "s/base_url/# base_url/g" ${sitePath}/${params}/volumes/config/ojs.config.inc.php
+        sed -i -e "s/${pSite}/${params}/g" ${sitePath}/${params}/volumes/config/ojs.config.inc.php
+
+        # Take a look to changes in destination:
+        vim $sitePath/$params/.env
+        vim $siteVols/$params/config/ojs.config.inc.php
+
+        # Rise the cloned site:
+        cd $sitePath/$params && docker-compose up -d --force
+
+        # cd $BACKCD
+        # docker exec ojs_app_${COMPOSE_PROJECT_NAME} \
+        # php tools/upgrade.php ${params}
     ;;
 
 
